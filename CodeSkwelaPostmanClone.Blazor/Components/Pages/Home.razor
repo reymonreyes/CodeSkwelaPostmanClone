@@ -1,5 +1,6 @@
 ﻿@page "/"
 @inject ISnackbar Snackbar
+@inject HttpClient HttpClient
 
 <PageTitle>Blazor Postman Clone</PageTitle>
 
@@ -12,19 +13,31 @@
             </MudSelect>
         </MudItem>
         <MudItem sm="9" md="9" lg="9">
-            <MudTextField T="string" Variant="Variant.Outlined"></MudTextField>
+            <MudTextField T="string" @bind-Value="_url" Variant="Variant.Outlined" Placeholder="Enter URL here"></MudTextField>
         </MudItem>
         <MudItem sm="2" md="2" lg="2">
             <MudButton OnClick="Send" Variant="Variant.Filled" FullWidth="true" Color="Color.Primary" Style="height: 100%;">Send</MudButton>
         </MudItem>
     </MudGrid>
 </MudPaper>
+<MudGrid>
+    <MudItem>
+        <MudText>
+            <pre style="white-space: pre-wrap;">
+                <code>
+                    @_responseContent
+                </code>
+            </pre>
+        </MudText>        
+    </MudItem>
+</MudGrid>
 
 @code{
     string _httpVerb = "get";
     string _url = "";
+    string _responseContent = "";
 
-    private void Send()
+    private async Task Send()
     {
         if (string.IsNullOrWhiteSpace(_url))
         {
@@ -32,5 +45,53 @@
             return;
         }
 
+        switch (_httpVerb)
+        {
+            case "get":
+                _responseContent = await GetRequest();
+                break;
+            case "post":
+                _responseContent = await PostRequest();
+                break;
+            default:
+                break;
+        }
+    }
+
+    private async Task<string> GetRequest()
+    {
+        var response = await HttpClient.GetAsync(_url);
+
+        var content = await response.Content.ReadAsStringAsync();
+
+        return content;
+    }
+
+    private async Task<string> PostRequest()
+    {
+        var body = """
+            {
+              "name": "Apple MacBook Pro 16",
+              "data": {
+                "year": 2019,
+                "price": 1849.99,
+                "CPU model": "Intel Core i9",
+                "Hard disk size": "1 TB"
+              }
+            }
+            """;
+
+        var request = new HttpRequestMessage
+        {
+            Method = new HttpMethod("post"),
+            RequestUri = new Uri(_url),
+            Content = new StringContent(body)
+        };
+
+        request.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+        
+        var response = await HttpClient.SendAsync(request);
+        
+        return await response.Content.ReadAsStringAsync();
     }
 }
