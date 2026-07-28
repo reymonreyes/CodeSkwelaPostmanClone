@@ -20,17 +20,72 @@
         </MudItem>
     </MudGrid>
 </MudPaper>
-<MudGrid>
-    <MudItem>
-        <MudText>
-            <pre style="white-space: pre-wrap;">
-                <code>
-                    @_responseContent
-                </code>
-            </pre>
-        </MudText>        
-    </MudItem>
-</MudGrid>
+<MudPaper Elevation="0" class="mt-7">
+    <MudGrid>
+        <MudItem sm="4" md="4" lg="4">
+            <MudText>Params</MudText>
+            <MudSimpleTable Bordered="true" Dense="true">
+                <thead>
+                    <tr><th>Key</th><th>Value</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense"/></td>
+                        <td><MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense"/></td>
+                    </tr>
+                    <tr>
+                        <td><MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
+                        <td><MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
+                    </tr>
+                    <tr>
+                        <td><MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
+                        <td><MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
+                    </tr>
+                </tbody>
+            </MudSimpleTable>
+        </MudItem>
+        <MudItem sm="4" md="4" lg="4">
+            <MudText>Headers</MudText>
+            <MudSimpleTable Bordered="true" Dense="true">
+                <thead>
+                    <tr><th>Key</th><th>Value</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
+                        <td><MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
+                    </tr>
+                    <tr>
+                        <td><MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
+                        <td><MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
+                    </tr>
+                    <tr>
+                        <td><MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
+                        <td><MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
+                    </tr>
+                </tbody>
+            </MudSimpleTable>
+        </MudItem>
+        <MudItem sm="4" md="4" lg="4">
+            <MudText>Body</MudText>
+            <MudTextField T="string" Lines="10" Margin="Margin.Dense" Variant="Variant.Outlined"></MudTextField>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+<MudPaper Elevation="2" class="mt-3">
+    <MudText Class="pa-2">Response</MudText>
+    <MudGrid>        
+        <MudItem sm="12" md="12" lg="12">
+            <MudText>
+                <pre style="white-space: pre-wrap;">
+                    <code>
+                        @_responseContent
+                    </code>
+                </pre>
+            </MudText>        
+        </MudItem>
+    </MudGrid>
+</MudPaper>
 
 @code{
     string _httpVerb = "get";
