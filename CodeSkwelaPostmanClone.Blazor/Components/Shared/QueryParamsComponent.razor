@@ -1,0 +1,51 @@
+﻿<MudText>Query Params</MudText>
+<MudSimpleTable Bordered="true" Dense="true">
+    <thead>
+        <tr><th></th><th>Key</th><th>Value</th></tr>
+    </thead>
+    <tbody>
+        @foreach (var parameter in Parameters)
+        {
+            <tr>
+                <td><MudIconButton OnClick="@(() => DeleteParam(parameter))" Icon="@Icons.Material.Filled.Close" aria-label="delete" Size="Size.Small" /></td>
+                <td><MudTextField T="string" Value="@parameter.Key" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
+                <td><MudTextField T="string" Value="@parameter.Value" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
+            </tr>
+        }
+        <tr>
+            <td><MudIconButton OnClick="AddParam" Icon="@Icons.Material.Filled.Check" aria-label="add" Size="Size.Small" /></td>
+            <td><MudTextField T="string" @bind-Value="_paramKey" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
+            <td><MudTextField T="string" @bind-Value="_paramValue" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
+        </tr>
+    </tbody>
+</MudSimpleTable>
+
+@code {
+    private string _paramKey = string.Empty, _paramValue = string.Empty;
+
+    [Parameter]
+    public List<KeyValuePair<string, string>> Parameters { get; set; }
+
+    [Parameter]
+    public EventCallback<KeyValuePair<string, string>> OnParamDeleted { get; set; }
+
+    [Parameter]
+    public EventCallback<KeyValuePair<string, string>> OnParamAdded { get; set; }
+
+    private async Task DeleteParam(KeyValuePair<string, string> param)
+    {
+        Parameters.Remove(param);
+
+        await OnParamDeleted.InvokeAsync(param);
+    }
+
+    private async Task AddParam()
+    {
+        if (string.IsNullOrWhiteSpace(_paramKey) || string.IsNullOrWhiteSpace(_paramValue))
+            return;
+
+        await OnParamAdded.InvokeAsync(new KeyValuePair<string, string>(_paramKey, _paramValue));
+
+        _paramKey = _paramValue = string.Empty;
+    }
+}

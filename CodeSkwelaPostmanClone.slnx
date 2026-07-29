@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="CodeSkwelaPostmanClone.Blazor/CodeSkwelaPostmanClone.Blazor.csproj" />
+  <Project Path="CodeSkwelaPostmanClone.UnitTests/CodeSkwelaPostmanClone.UnitTests.csproj" Id="3bfb344f-ab46-4e2a-b975-9755fcea989c" />
 </Solution>
