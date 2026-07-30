@@ -25,7 +25,7 @@
 <MudPaper Elevation="0" class="mt-7">
     <MudGrid>
         <MudItem sm="4" md="4" lg="4">
-            <QueryParamsComponent Parameters="_parameters" OnParamDeleted="UpdateQueryString" OnParamAdded="AddParameter" />            
+            <QueryParamsComponent Parameters="_parameters" OnParamDeleted="UpdateQueryString" OnParamAdded="AddParameter" OnParamChanged="UpdateQueryString" />
         </MudItem>
         <MudItem sm="4" md="4" lg="4">
             <MudText>Headers</MudText>
@@ -74,7 +74,7 @@
     string _httpVerb = "get";
     string _url = "";
     string _responseContent = "";
-    List<KeyValuePair<string, string>> _parameters = new List<KeyValuePair<string, string>>();
+    List<QueryStringParameter> _parameters = new List<QueryStringParameter>();
 
     private async Task Send()
     {
@@ -152,9 +152,9 @@
         _url = baseUrl;
     }
 
-    private void AddParameter(KeyValuePair<string, string> parameter)
+    private void AddParameter(QueryStringParameter parameter)
     {
         _parameters.Add(parameter);
         UpdateQueryString();
-    }
+    }    
 }

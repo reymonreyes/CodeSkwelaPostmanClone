@@ -9,9 +9,9 @@
             return result;
         }
 
-        public List<KeyValuePair<string, string>> ParseParametersToList(string url)
+        public List<QueryStringParameter> ParseParametersToList(string url)
         {
-            var result = new List<KeyValuePair<string, string>>();
+            var result = new List<QueryStringParameter>();
 
             var parameters = ParseParameters(url);
             var splitParams = parameters.Split('&');
@@ -21,7 +21,7 @@
                 var splitParam = param.Split('=');
                 if(splitParam.Length == 2)
                 {
-                    result.Add(new KeyValuePair<string, string>(splitParam[0], splitParam[1]));
+                    result.Add(new QueryStringParameter { Key = splitParam[0], Value = splitParam[1] });
                 }
             }
 

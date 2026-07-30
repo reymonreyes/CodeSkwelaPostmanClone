@@ -23,15 +23,16 @@ namespace CodeSkwelaPostmanClone.UnitTests
         public void Parse_MustSplitParametersPart()
         {
             var url = "https://sample.com?param1=alpha&param2=bravo";
-            var parametersExpected = new List<KeyValuePair<string, string>> {
-                new KeyValuePair<string, string>("param1", "alpha"),
-                new KeyValuePair<string, string>("param2", "bravo")
+            var parametersExpected = new List<QueryStringParameter> {
+                new QueryStringParameter { Key = "param1", Value = "alpha" },
+                new QueryStringParameter { Key = "param2", Value = "bravo" }
             };
 
             var parser = new UrlParametersParser();
             var parametersResult = parser.ParseParametersToList(url);
 
-            Assert.Equal(parametersExpected, parametersResult);
+            
+            Assert.Equivalent(parametersExpected, parametersResult);
         }        
     }
 }

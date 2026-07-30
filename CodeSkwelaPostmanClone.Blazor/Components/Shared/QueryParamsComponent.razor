@@ -1,4 +1,5 @@
-﻿<MudText>Query Params</MudText>
+﻿@using CodeSkwelaPostmanClone.Blazor.Shared
+<MudText>Query Params</MudText>
 <MudSimpleTable Bordered="true" Dense="true">
     <thead>
         <tr><th></th><th>Key</th><th>Value</th></tr>
@@ -8,44 +9,70 @@
         {
             <tr>
                 <td><MudIconButton OnClick="@(() => DeleteParam(parameter))" Icon="@Icons.Material.Filled.Close" aria-label="delete" Size="Size.Small" /></td>
-                <td><MudTextField T="string" Value="@parameter.Key" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
-                <td><MudTextField T="string" Value="@parameter.Value" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
+                <td><MudTextField T="string" ValueChanged="@((key) => UpdateKey(parameter, key))" Value="@parameter.Key" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
+                <td><MudTextField T="string" ValueChanged="@((val) => UpdateValue(parameter, val))" Value="@parameter.Value" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
             </tr>
         }
         <tr>
-            <td><MudIconButton OnClick="AddParam" Icon="@Icons.Material.Filled.Check" aria-label="add" Size="Size.Small" /></td>
-            <td><MudTextField T="string" @bind-Value="_paramKey" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
-            <td><MudTextField T="string" @bind-Value="_paramValue" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
+            <td>@* <MudIconButton OnClick="AddParam" Icon="@Icons.Material.Filled.Check" aria-label="add" Size="Size.Small" /> *@</td>
+            <td><MudTextField @ref="_paramKeyText" T="string" Value="_paramKey" ValueChanged="@((key) => AddParam(key, _paramValue))" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
+            <td><MudTextField @ref="_paramValueText" T="string" Value="_paramValue" ValueChanged="@((value) => AddParam(_paramKey, value))" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
         </tr>
     </tbody>
 </MudSimpleTable>
 
 @code {
     private string _paramKey = string.Empty, _paramValue = string.Empty;
+    MudTextField<string> _paramKeyText;
+    MudTextField<string> _paramValueText;
 
     [Parameter]
-    public List<KeyValuePair<string, string>> Parameters { get; set; }
+    public List<QueryStringParameter> Parameters { get; set; }
 
     [Parameter]
-    public EventCallback<KeyValuePair<string, string>> OnParamDeleted { get; set; }
+    public EventCallback<QueryStringParameter> OnParamDeleted { get; set; }
 
     [Parameter]
-    public EventCallback<KeyValuePair<string, string>> OnParamAdded { get; set; }
+    public EventCallback<QueryStringParameter> OnParamAdded { get; set; }
 
-    private async Task DeleteParam(KeyValuePair<string, string> param)
+    [Parameter]
+    public EventCallback<QueryStringParameter> OnParamChanged { get; set; }
+
+    private async Task DeleteParam(QueryStringParameter param)
     {
         Parameters.Remove(param);
 
         await OnParamDeleted.InvokeAsync(param);
     }
 
-    private async Task AddParam()
+    private async Task AddParam(string key, string value)
     {
+        _paramKey = key;
+        _paramValue = value;
+
         if (string.IsNullOrWhiteSpace(_paramKey) || string.IsNullOrWhiteSpace(_paramValue))
             return;
 
-        await OnParamAdded.InvokeAsync(new KeyValuePair<string, string>(_paramKey, _paramValue));
+        await OnParamAdded.InvokeAsync(new QueryStringParameter { Key = _paramKey, Value = _paramValue });
 
-        _paramKey = _paramValue = string.Empty;
+        await _paramKeyText.ClearAsync();
+        await _paramValueText.ClearAsync();
+    }
+
+    private async Task UpdateParams(QueryStringParameter parameter)
+    {
+        await OnParamChanged.InvokeAsync(parameter);
+    }
+
+    private async Task UpdateKey(QueryStringParameter parameter, string key)
+    {
+        parameter.Key = key;
+        await OnParamChanged.InvokeAsync(parameter);
+    }
+
+    private async Task UpdateValue(QueryStringParameter parameter, string value)
+    {
+        parameter.Value = value;
+        await OnParamChanged.InvokeAsync(parameter);
     }
 }
