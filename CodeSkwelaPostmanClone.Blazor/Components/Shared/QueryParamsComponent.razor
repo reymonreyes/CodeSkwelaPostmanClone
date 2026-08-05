@@ -14,7 +14,7 @@
             </tr>
         }
         <tr>
-            <td>@* <MudIconButton OnClick="AddParam" Icon="@Icons.Material.Filled.Check" aria-label="add" Size="Size.Small" /> *@</td>
+            <td><MudIconButton OnClick="@(() => AddParam(_paramKey, _paramValue))" Icon="@Icons.Material.Filled.Check" aria-label="add" Size="Size.Small" /></td>
             <td><MudTextField @ref="_paramKeyText" T="string" Value="_paramKey" ValueChanged="@((key) => AddParam(key, _paramValue))" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
             <td><MudTextField @ref="_paramValueText" T="string" Value="_paramValue" ValueChanged="@((value) => AddParam(_paramKey, value))" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
         </tr>

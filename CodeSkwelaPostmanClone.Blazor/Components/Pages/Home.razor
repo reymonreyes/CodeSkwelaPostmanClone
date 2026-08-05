@@ -25,29 +25,10 @@
 <MudPaper Elevation="0" class="mt-7">
     <MudGrid>
         <MudItem sm="4" md="4" lg="4">
-            <QueryParamsComponent Parameters="_parameters" OnParamDeleted="UpdateQueryString" OnParamAdded="AddParameter" OnParamChanged="UpdateQueryString" />
+            <QueryParamsComponent Parameters="_queryParameters" OnParamDeleted="UpdateQueryString" OnParamAdded="AddParameter" OnParamChanged="UpdateQueryString" />
         </MudItem>
         <MudItem sm="4" md="4" lg="4">
-            <MudText>Headers</MudText>
-            <MudSimpleTable Bordered="true" Dense="true">
-                <thead>
-                    <tr><th>Key</th><th>Value</th></tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
-                        <td><MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
-                    </tr>
-                    <tr>
-                        <td><MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
-                        <td><MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
-                    </tr>
-                    <tr>
-                        <td><MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
-                        <td><MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
-                    </tr>
-                </tbody>
-            </MudSimpleTable>
+            <RequestHeaders Parameters="_headerParameters" OnParamAdded="AddHeader" />            
         </MudItem>
         <MudItem sm="4" md="4" lg="4">
             <MudText>Body</MudText>
@@ -57,6 +38,10 @@
 </MudPaper>
 <MudPaper Elevation="2" class="mt-3">
     <MudText Class="pa-2">Response</MudText>
+    @if (_isRequesting)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+    }
     <MudGrid class="pa-3">
         <MudItem sm="12" md="12" lg="12">
             <MudText>
@@ -74,7 +59,9 @@
     string _httpVerb = "get";
     string _url = "";
     string _responseContent = "";
-    List<QueryStringParameter> _parameters = new List<QueryStringParameter>();
+    bool _isRequesting;
+    List<QueryStringParameter> _queryParameters = new List<QueryStringParameter>();
+    List<HeaderParameter> _headerParameters = new List<HeaderParameter>();
 
     private async Task Send()
     {
@@ -99,15 +86,28 @@
 
     private async Task<string> GetRequest()
     {
-        var response = await HttpClient.GetAsync(_url);
+        _isRequesting = true;
+        string result = string.Empty;
+        
+        try
+        {
+            var response = await HttpClient.GetAsync(_url);            
+            result = await response.Content.ReadAsStringAsync();
+        }
+        catch(Exception exception)
+        {
+            Snackbar.Add(exception.Message, Severity.Error);
+        }
 
-        var content = await response.Content.ReadAsStringAsync();
+        _isRequesting = false;
 
-        return content;
+        return result;
     }
 
     private async Task<string> PostRequest()
     {
+        _isRequesting = true;
+
         var body = """
             {
               "name": "Apple MacBook Pro 16",
@@ -131,7 +131,10 @@
 
         var response = await HttpClient.SendAsync(request);
 
-        return await response.Content.ReadAsStringAsync();
+        var result = await response.Content.ReadAsStringAsync();
+        _isRequesting = false;
+
+        return result;
     }
 
     private void ParseParameters(string url)
@@ -140,21 +143,26 @@
 
         var parser = new UrlParametersParser();
 
-        _parameters = parser.ParseParametersToList(_url);
+        _queryParameters = parser.ParseParametersToList(_url);
     }
 
     private void UpdateQueryString()
     {
         var baseUrl = _url.Substring(0, _url.IndexOf('?') + 1);
 
-        baseUrl += string.Join('&', _parameters.Select(x => $"{x.Key}={x.Value}").ToList());
+        baseUrl += string.Join('&', _queryParameters.Select(x => $"{x.Key}={x.Value}").ToList());
 
         _url = baseUrl;
     }
 
     private void AddParameter(QueryStringParameter parameter)
     {
-        _parameters.Add(parameter);
+        _queryParameters.Add(parameter);
         UpdateQueryString();
-    }    
+    }
+
+    private void AddHeader(HeaderParameter headerParameter)
+    {
+        _headerParameters.Add(headerParameter);
+    }
 }

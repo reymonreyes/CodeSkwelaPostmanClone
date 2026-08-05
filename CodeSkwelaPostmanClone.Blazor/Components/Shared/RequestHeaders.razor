@@ -1,0 +1,93 @@
+﻿@using CodeSkwelaPostmanClone.Blazor.Shared
+<MudText>Headers</MudText>
+
+<MudSimpleTable Bordered="true" Dense="true">
+    <thead>
+        <tr><th></th><th>Key</th><th>Value</th></tr>
+    </thead>
+    <tbody>
+        @foreach (var parameter in Parameters)
+        {
+            <tr>
+                <td><MudIconButton OnClick="@(() => DeleteHeader(parameter))" Icon="@Icons.Material.Filled.Close" aria-label="delete" Size="Size.Small" /></td>
+                <td>
+                    <MudAutocomplete T="KeyValuePair<string, HeaderType>" Value="new KeyValuePair<string, HeaderType>(parameter.Key, parameter.HeaderType)" ValueChanged="@((header) => UpdateHeader(parameter, header))"
+                                     ToStringFunc="((keyValuePair) => keyValuePair.Key)" SearchFunc="Search" CoerceValue="true" />
+                </td>
+                <td><MudTextField @bind-Value="@parameter.Value" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>                
+            </tr>
+        }
+        <tr>
+            <td><MudIconButton OnClick="@(() => AddHeader(_paramHeader, _paramValue))" Icon="@Icons.Material.Filled.Check" aria-label="add" Size="Size.Small" /></td>
+            <td><MudAutocomplete @ref="_newParamHeaderKeyMudAutocomplete" T="KeyValuePair<string, HeaderType>" Value="_paramHeader" ValueChanged="@((header) => AddHeader(header, _paramValue))" 
+                ToStringFunc="((keyValuePair) => keyValuePair.Key)" SearchFunc="Search" CoerceValue="true" /></td>
+            <td><MudTextField @ref="_paramValueText" T="string" Value="_paramValue" ValueChanged="@((value) => AddHeader(_paramHeader, value))" Variant="Variant.Outlined" Margin="Margin.Dense" /></td>
+        </tr>
+    </tbody>
+</MudSimpleTable>
+
+@code {
+    private string _paramKey = string.Empty, _paramValue = string.Empty;
+    KeyValuePair<string, HeaderType> _paramHeader;
+    MudTextField<string> _paramValueText;
+    MudAutocomplete<KeyValuePair<string, HeaderType>> _newParamHeaderKeyMudAutocomplete;
+    List<KeyValuePair<string, HeaderType>> _standardHeaders = new List<KeyValuePair<string, HeaderType>>();
+
+    [Parameter]
+    public List<HeaderParameter> Parameters { get; set; }
+
+    [Parameter]
+    public EventCallback<HeaderParameter> OnParamAdded { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        //load Content headers and Request header
+        var httpHeaders = new HttpHeaders();
+        _standardHeaders = httpHeaders.GetAll();
+    }
+
+    private async Task AddHeader(KeyValuePair<string, HeaderType> header, string value)
+    {
+        _paramHeader = header;
+        _paramValue = value;
+
+        if (string.IsNullOrWhiteSpace(_paramHeader.Key) || string.IsNullOrWhiteSpace(_paramValue))
+            return;
+
+        await OnParamAdded.InvokeAsync(new HeaderParameter { Key = _paramHeader.Key, Value = _paramValue, HeaderType = _paramHeader.Value });
+
+        await _newParamHeaderKeyMudAutocomplete.ClearAsync();
+        await _paramValueText.ClearAsync();
+    }
+
+    private async Task DeleteHeader(HeaderParameter param)
+    {
+        Parameters.Remove(param);
+    }
+
+    private async Task UpdateHeader(HeaderParameter parameter, KeyValuePair<string, HeaderType> header)
+    {
+        parameter.Key = header.Key;
+        parameter.HeaderType = header.Value;
+    }
+
+    private async Task UpdateValue(HeaderParameter parameter, string value)
+    {
+        parameter.Value = value;
+    }
+
+    private Task<IEnumerable<KeyValuePair<string, HeaderType>>> Search(string value, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return Task.FromResult<IEnumerable<KeyValuePair<string, HeaderType>>>(new List<KeyValuePair<string, HeaderType>>());
+
+        var result = _standardHeaders.Where(x => x.Key.Contains(value.ToLower(), StringComparison.InvariantCultureIgnoreCase)).ToList();
+
+        if(result.Count == 0)
+            result = new List<KeyValuePair<string, HeaderType>> { new KeyValuePair<string, HeaderType>(value, HeaderType.Request) };
+
+        Console.WriteLine(result);
+
+        return Task.FromResult<IEnumerable<KeyValuePair<string, HeaderType>>>(result);
+    }
+}

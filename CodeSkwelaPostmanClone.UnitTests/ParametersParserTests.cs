@@ -23,9 +23,9 @@ namespace CodeSkwelaPostmanClone.UnitTests
         public void Parse_MustSplitParametersPart()
         {
             var url = "https://sample.com?param1=alpha&param2=bravo";
-            var parametersExpected = new List<QueryStringParameter> {
-                new QueryStringParameter { Key = "param1", Value = "alpha" },
-                new QueryStringParameter { Key = "param2", Value = "bravo" }
+            var parametersExpected = new List<RequestParameter> {
+                new RequestParameter { Key = "param1", Value = "alpha" },
+                new RequestParameter { Key = "param2", Value = "bravo" }
             };
 
             var parser = new UrlParametersParser();
