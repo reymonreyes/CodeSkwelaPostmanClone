@@ -18,7 +18,7 @@
             <MudTextField T="string" Value="_url" ValueChanged="ParseParameters" Variant="Variant.Outlined" Placeholder="Enter URL here"></MudTextField>
         </MudItem>
         <MudItem sm="2" md="2" lg="2">
-            <MudButton OnClick="Send" Variant="Variant.Filled" FullWidth="true" Color="Color.Primary" Style="height: 100%;">Send</MudButton>
+            <MudButton OnClick="SendRequest" Variant="Variant.Filled" FullWidth="true" Color="Color.Primary" Style="height: 100%;">Send</MudButton>
         </MudItem>
     </MudGrid>
 </MudPaper>
@@ -32,7 +32,7 @@
         </MudItem>
         <MudItem sm="4" md="4" lg="4">
             <MudText>Body</MudText>
-            <MudTextField T="string" Lines="10" Margin="Margin.Dense" Variant="Variant.Outlined"></MudTextField>
+            <MudTextField @bind-Value="_requestBody" Lines="10" Margin="Margin.Dense" Variant="Variant.Outlined"></MudTextField>
         </MudItem>
     </MudGrid>
 </MudPaper>
@@ -59,58 +59,17 @@
     string _httpVerb = "get";
     string _url = "";
     string _responseContent = "";
+    string _requestBody = "";
     bool _isRequesting;
     List<QueryStringParameter> _queryParameters = new List<QueryStringParameter>();
     List<HeaderParameter> _headerParameters = new List<HeaderParameter>();
 
-    private async Task Send()
+    protected override void OnInitialized()
     {
-        if (string.IsNullOrWhiteSpace(_url))
-        {
-            Snackbar.Add("Url is required");
-            return;
-        }
-
-        switch (_httpVerb)
-        {
-            case "get":
-                _responseContent = await GetRequest();
-                break;
-            case "post":
-                _responseContent = await PostRequest();
-                break;
-            default:
-                break;
-        }
-    }
-
-    private async Task<string> GetRequest()
-    {
-        _isRequesting = true;
-        string result = string.Empty;
-        
-        try
-        {
-            var response = await HttpClient.GetAsync(_url);            
-            result = await response.Content.ReadAsStringAsync();
-        }
-        catch(Exception exception)
-        {
-            Snackbar.Add(exception.Message, Severity.Error);
-        }
-
-        _isRequesting = false;
-
-        return result;
-    }
-
-    private async Task<string> PostRequest()
-    {
-        _isRequesting = true;
-
-        var body = """
+        //sample POST request body for https://api.restful-api.dev/objects
+        _requestBody = """
             {
-              "name": "Apple MacBook Pro 16",
+              "name": "Lenovo Thinkpad T16",
               "data": {
                 "year": 2019,
                 "price": 1849.99,
@@ -119,23 +78,56 @@
               }
             }
             """;
+    }
+
+    private async Task Send()
+    {
+        if (string.IsNullOrWhiteSpace(_url))
+        {
+            Snackbar.Add("Url is required");
+            return;
+        }
+    }
+
+    private async Task SendRequest()
+    {
+        if (string.IsNullOrWhiteSpace(_url))
+        {
+            Snackbar.Add("Url is required");
+            return;
+        }
+
+        _isRequesting = true;
 
         var request = new HttpRequestMessage
         {
-            Method = new HttpMethod("post"),
+            Method = new HttpMethod(_httpVerb),
             RequestUri = new Uri(_url),
-            Content = new StringContent(body)
+            Content = new StringContent(_requestBody)
         };
 
-        request.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+        request.Headers.Clear();
+        var requestHeader = _headerParameters.Where(x => x.HeaderType == HeaderType.Request).ToList();
+        foreach (var header in requestHeader)
+            request.Headers.Add(header.Key, header.Value);
 
-        var response = await HttpClient.SendAsync(request);
+        request.Content.Headers.Clear();
+        var contentHeaders = _headerParameters.Where(x => x.HeaderType == HeaderType.Content).ToList();
+        foreach (var header in contentHeaders)
+            request.Content.Headers.Add(header.Key, header.Value);
 
-        var result = await response.Content.ReadAsStringAsync();
+        try
+        {
+            var response = await HttpClient.SendAsync(request);
+            _responseContent = await response.Content.ReadAsStringAsync();
+        }
+        catch (Exception exception)
+        {
+            Snackbar.Add(exception.Message, Severity.Error);
+        }
+
         _isRequesting = false;
-
-        return result;
-    }
+    }   
 
     private void ParseParameters(string url)
     {
