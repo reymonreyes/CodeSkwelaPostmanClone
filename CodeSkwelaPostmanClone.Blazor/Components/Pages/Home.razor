@@ -132,6 +132,8 @@
     private void UpdateQueryString()
     {
         var baseUrl = _url.Substring(0, _url.IndexOf('?') + 1);
+        if (string.IsNullOrWhiteSpace(baseUrl)) baseUrl = _url + "?";
+
 
         baseUrl += string.Join('&', _queryParameters.Select(x => $"{x.Key}={x.Value}").ToList());
 

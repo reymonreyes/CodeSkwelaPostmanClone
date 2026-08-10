@@ -59,11 +59,6 @@
         await _paramValueText.ClearAsync();
     }
 
-    private async Task UpdateParams(QueryStringParameter parameter)
-    {
-        await OnParamChanged.InvokeAsync(parameter);
-    }
-
     private async Task UpdateKey(QueryStringParameter parameter, string key)
     {
         parameter.Key = key;
