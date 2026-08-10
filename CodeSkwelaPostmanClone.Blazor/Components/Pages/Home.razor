@@ -80,15 +80,6 @@
             """;
     }
 
-    private async Task Send()
-    {
-        if (string.IsNullOrWhiteSpace(_url))
-        {
-            Snackbar.Add("Url is required");
-            return;
-        }
-    }
-
     private async Task SendRequest()
     {
         if (string.IsNullOrWhiteSpace(_url))
