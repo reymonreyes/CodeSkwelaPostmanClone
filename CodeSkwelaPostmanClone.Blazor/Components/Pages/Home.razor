@@ -5,7 +5,16 @@
 @inject HttpClient HttpClient
 
 <PageTitle>Blazor Postman Clone</PageTitle>
-
+<MudPaper class="pa-2 mt-2">
+    <MudGrid>        
+        <MudItem sm="6" md="6" lg="6">
+            <MudNumericField @bind-Value="_repeat" Variant="Variant.Outlined" Placeholder="Repeat" Label="Repeat" ShrinkLabel="true" Min="1" Max="6"/>
+        </MudItem>
+        <MudItem sm="6" md="6" lg="6">
+            <MudNumericField @bind-Value="_delay" Variant="Variant.Outlined" Placeholder="Delay is milliseconds" Label="Delay" ShrinkLabel="true" Min="100" Max="5000" />
+        </MudItem>
+    </MudGrid>
+</MudPaper>
 <MudPaper class="pa-2 mt-2">
     <MudGrid>
         <MudItem sm="1" md="1" lg="1">
@@ -43,15 +52,18 @@
         <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
     }
     <MudGrid class="pa-3">
-        <MudItem sm="12" md="12" lg="12">
-            <MudText>
-                <pre style="white-space: pre-wrap;">
-                    <code>
-                        @_responseContent
-                    </code>
-                </pre>
-            </MudText>        
-        </MudItem>
+        @foreach (var response in _responses)
+        {
+            <MudItem sm="12" md="12" lg="12">
+                <MudText>
+                    <pre style="white-space: pre-wrap;">
+                        <code>
+                            @response
+                        </code>
+                    </pre>
+                </MudText>
+            </MudItem>
+        }
     </MudGrid>
 </MudPaper>
 
@@ -61,23 +73,14 @@
     string _responseContent = "";
     string _requestBody = "";
     bool _isRequesting;
+    int _repeat = 1, _delay = 100, _maxRepeat = 5;
     List<QueryStringParameter> _queryParameters = new List<QueryStringParameter>();
     List<HeaderParameter> _headerParameters = new List<HeaderParameter>();
+    List<string> _responses = new List<string>();
 
     protected override void OnInitialized()
     {
-        //sample POST request body for https://api.restful-api.dev/objects
-        _requestBody = """
-            {
-              "name": "Lenovo Thinkpad T16",
-              "data": {
-                "year": 2019,
-                "price": 1849.99,
-                "CPU model": "Intel Core i9",
-                "Hard disk size": "1 TB"
-              }
-            }
-            """;
+        
     }
 
     private async Task SendRequest()
@@ -89,28 +92,22 @@
         }
 
         _isRequesting = true;
-
-        var request = new HttpRequestMessage
-        {
-            Method = new HttpMethod(_httpVerb),
-            RequestUri = new Uri(_url),
-            Content = new StringContent(_requestBody)
-        };
-
-        request.Headers.Clear();
-        var requestHeader = _headerParameters.Where(x => x.HeaderType == HeaderType.Request).ToList();
-        foreach (var header in requestHeader)
-            request.Headers.Add(header.Key, header.Value);
-
-        request.Content.Headers.Clear();
-        var contentHeaders = _headerParameters.Where(x => x.HeaderType == HeaderType.Content).ToList();
-        foreach (var header in contentHeaders)
-            request.Content.Headers.Add(header.Key, header.Value);
-
+       
         try
         {
-            var response = await HttpClient.SendAsync(request);
-            _responseContent = await response.Content.ReadAsStringAsync();
+            _responses.Clear();
+
+            for (int x = 1; x <= _repeat && x <= _maxRepeat; x++)
+            {
+                var request = CreateRequest();
+                var response = await HttpClient.SendAsync(request);
+                _responseContent = await response.Content.ReadAsStringAsync();
+                _responses.Add(_responseContent);
+
+                if (_repeat > 1)
+                    await Task.Delay(_delay);
+            }
+
         }
         catch (Exception exception)
         {
@@ -149,5 +146,32 @@
     private void AddHeader(HeaderParameter headerParameter)
     {
         _headerParameters.Add(headerParameter);
+    }
+
+    private HttpRequestMessage CreateRequest()
+    {
+        var request = new HttpRequestMessage
+        {
+            Method = new HttpMethod(_httpVerb),
+            RequestUri = new Uri(_url)
+        };
+
+        if (!string.IsNullOrWhiteSpace(_requestBody))
+            request.Content = new StringContent(_requestBody);
+        
+        request.Headers.Clear();
+        var requestHeader = _headerParameters.Where(x => x.HeaderType == HeaderType.Request).ToList();
+
+        foreach (var header in requestHeader)
+            request.Headers.Add(header.Key, header.Value);
+
+        if (request.Content != null) request.Content.Headers.Clear();
+
+        var contentHeaders = _headerParameters.Where(x => x.HeaderType == HeaderType.Content).ToList();
+
+        foreach (var header in contentHeaders)
+            request.Content.Headers.Add(header.Key, header.Value);
+
+        return request;
     }
 }
