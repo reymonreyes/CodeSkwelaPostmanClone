@@ -1,4 +1,5 @@
 using CodeSkwelaPostmanClone.Blazor.Components;
+using CodeSkwelaPostmanClone.Blazor.Infrastructure.Data;
 using MudBlazor.Services;
 
 namespace CodeSkwelaPostmanClone.Blazor
@@ -17,6 +18,7 @@ namespace CodeSkwelaPostmanClone.Blazor
                 .AddInteractiveServerComponents();
 
             builder.Services.AddHttpClient();
+            builder.Services.AddDbContextFactory<ApplicationDbContext>();
 
             var app = builder.Build();
 

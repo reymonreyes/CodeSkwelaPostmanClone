@@ -1,17 +1,30 @@
 ﻿@page "/"
 @using CodeSkwelaPostmanClone.Blazor.Components.Shared
+@using CodeSkwelaPostmanClone.Blazor.Infrastructure.Data
 @using CodeSkwelaPostmanClone.Blazor.Shared
+@using Microsoft.EntityFrameworkCore
 @inject ISnackbar Snackbar
 @inject HttpClient HttpClient
+@inject IDbContextFactory<ApplicationDbContext> DbContextFactory
 
-<PageTitle>Blazor Postman Clone</PageTitle>
-<MudPaper class="pa-2 mt-2">
+<PageTitle>Blazter Api Helper</PageTitle>
+@* <MudPaper class="pa-2 mt-2">
     <MudGrid>        
         <MudItem sm="6" md="6" lg="6">
             <MudNumericField @bind-Value="_repeat" Variant="Variant.Outlined" Placeholder="Repeat" Label="Repeat" ShrinkLabel="true" Min="1" Max="6"/>
         </MudItem>
         <MudItem sm="6" md="6" lg="6">
             <MudNumericField @bind-Value="_delay" Variant="Variant.Outlined" Placeholder="Delay is milliseconds" Label="Delay" ShrinkLabel="true" Min="100" Max="5000" />
+        </MudItem>
+    </MudGrid>
+</MudPaper> *@
+<MudPaper class="pa-2 mt-2">
+    <MudGrid>       
+        <MudItem sm="10" md="10" lg="10"">
+            <MudTextField T="string" @bind-Value="_requestName" Variant="Variant.Outlined" Label="Name" ShrinkLabel="true"></MudTextField>
+        </MudItem>
+        <MudItem sm="2" md="2" lg="2" Class="pt-8 pb-1">
+            <MudButton OnClick="SaveRequest" Variant="Variant.Filled" FullWidth="true" Color="Color.Secondary" Style="height: 100%;">Save</MudButton>
         </MudItem>
     </MudGrid>
 </MudPaper>
@@ -72,6 +85,7 @@
     string _url = "";
     string _responseContent = "";
     string _requestBody = "";
+    string _requestName = "";
     bool _isRequesting;
     int _repeat = 1, _delay = 100, _maxRepeat = 5;
     List<QueryStringParameter> _queryParameters = new List<QueryStringParameter>();
@@ -80,7 +94,7 @@
 
     protected override void OnInitialized()
     {
-        
+
     }
 
     private async Task SendRequest()
@@ -92,7 +106,7 @@
         }
 
         _isRequesting = true;
-       
+
         try
         {
             _responses.Clear();
@@ -158,7 +172,7 @@
 
         if (!string.IsNullOrWhiteSpace(_requestBody))
             request.Content = new StringContent(_requestBody);
-        
+
         request.Headers.Clear();
         var requestHeader = _headerParameters.Where(x => x.HeaderType == HeaderType.Request).ToList();
 
@@ -173,5 +187,25 @@
             request.Content.Headers.Add(header.Key, header.Value);
 
         return request;
+    }
+
+    private async Task SaveRequest()
+    {
+        var request = new Core.Entities.RequestSettings
+        {
+            Name = _requestName,
+            Url = _url,
+            Verb = _httpVerb,
+            Body = _requestBody,
+            HeaderParameters = _headerParameters
+        };
+
+        using (var context = await DbContextFactory.CreateDbContextAsync())
+        {
+            await context.RequestSettings.AddAsync(request);
+            await context.SaveChangesAsync();
+        }
+
+        Snackbar.Add("Request saved successfully", Severity.Success);
     }
 }
