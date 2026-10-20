@@ -88,9 +88,11 @@
     string _requestName = "";
     bool _isRequesting;
     int _repeat = 1, _delay = 100, _maxRepeat = 5;
+    int _requestId;
     List<QueryStringParameter> _queryParameters = new List<QueryStringParameter>();
     List<HeaderParameter> _headerParameters = new List<HeaderParameter>();
     List<string> _responses = new List<string>();
+    Core.Entities.RequestSettings? _requestSettings;
 
     protected override void OnInitialized()
     {
@@ -190,20 +192,33 @@
     }
 
     private async Task SaveRequest()
-    {
-        var request = new Core.Entities.RequestSettings
-        {
-            Name = _requestName,
-            Url = _url,
-            Verb = _httpVerb,
-            Body = _requestBody,
-            HeaderParameters = _headerParameters
-        };
-
+    {        
         using (var context = await DbContextFactory.CreateDbContextAsync())
         {
-            await context.RequestSettings.AddAsync(request);
+            if(_requestId == 0)
+            {
+                _requestSettings = new Core.Entities.RequestSettings
+                {
+                    Name = _requestName,
+                    Url = _url,
+                    Verb = _httpVerb,
+                    Body = _requestBody,
+                    HeaderParameters = _headerParameters
+                };
+                await context.RequestSettings.AddAsync(_requestSettings);
+            }
+            else
+            {
+                _requestSettings.Name = _requestName;
+                _requestSettings.Url = _url;
+                _requestSettings.Verb = _httpVerb;
+                _requestSettings.Body = _requestBody;
+                _requestSettings.HeaderParameters = _headerParameters;             
+                context.RequestSettings.Update(_requestSettings);
+            }
+
             await context.SaveChangesAsync();
+            _requestId = _requestSettings.Id;
         }
 
         Snackbar.Add("Request saved successfully", Severity.Success);
