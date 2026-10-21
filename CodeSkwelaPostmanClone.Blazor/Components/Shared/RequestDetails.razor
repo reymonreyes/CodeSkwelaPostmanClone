@@ -1,0 +1,196 @@
+﻿@using CodeSkwelaPostmanClone.Blazor.Infrastructure.Data
+@using CodeSkwelaPostmanClone.Blazor.Shared
+@using Microsoft.EntityFrameworkCore
+@inject ISnackbar Snackbar
+@inject HttpClient HttpClient
+@inject IDbContextFactory<ApplicationDbContext> DbContextFactory
+
+<MudPaper class="pa-2 mt-2">
+    <MudGrid>
+        <MudItem sm="10" md="10" lg="10">
+            <MudTextField T="string" Value="RequestSettings?.Name" ValueChanged="NameValueChanged" Variant="Variant.Outlined" Label="Name" ShrinkLabel="true"></MudTextField>
+        </MudItem>
+        <MudItem sm="2" md="2" lg="2" Class="pt-8 pb-1">
+            <MudButton OnClick="SaveRequest" Variant="Variant.Filled" FullWidth="true" Color="Color.Secondary" Style="height: 100%;">Save</MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+<MudPaper class="pa-2 mt-2">
+    <MudGrid>
+        <MudItem sm="1" md="1" lg="1">
+            <MudSelect @bind-Value="RequestSettings?.Verb" Variant="Variant.Outlined">
+                <MudSelectItem Value="@("get")">GET</MudSelectItem>
+                <MudSelectItem Value="@("post")">POST</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem sm="9" md="9" lg="9">
+            <MudTextField T="string" Value="RequestSettings?.Url" ValueChanged="ParseParameters" Variant="Variant.Outlined" Placeholder="Enter URL here"></MudTextField>
+        </MudItem>
+        <MudItem sm="2" md="2" lg="2">
+            <MudButton OnClick="SendRequest" Variant="Variant.Filled" FullWidth="true" Color="Color.Primary" Style="height: 100%;">Send</MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+<MudPaper Elevation="0" class="mt-7">
+    <MudGrid>
+        <MudItem sm="4" md="4" lg="4">
+            <QueryParamsComponent Parameters="_queryParameters" OnParamDeleted="UpdateQueryString" OnParamAdded="AddParameter" OnParamChanged="UpdateQueryString" />
+        </MudItem>
+        <MudItem sm="4" md="4" lg="4">
+            <RequestHeaders Parameters="RequestSettings?.HeaderParameters" OnParamAdded="AddHeader" />
+        </MudItem>
+        <MudItem sm="4" md="4" lg="4">
+            <MudText>Body</MudText>
+            <MudTextField @bind-Value="RequestSettings?.Body" Lines="10" Margin="Margin.Dense" Variant="Variant.Outlined"></MudTextField>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+<MudPaper Elevation="2" class="mt-3">
+    <MudText Class="pa-2">Response</MudText>
+    @if (_isRequesting)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+    }
+    <MudGrid class="pa-3">        
+        <MudItem sm="12" md="12" lg="12">
+            <MudText>
+                <pre style="white-space: pre-wrap;">
+                    <code>
+                        @_responseContent
+                    </code>
+                </pre>
+            </MudText>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@code {
+    string _responseContent = "";
+    bool _isRequesting;
+    List<QueryStringParameter> _queryParameters = new List<QueryStringParameter>();
+    List<HeaderParameter> _headerParameters = new List<HeaderParameter>();    
+
+    [Parameter]
+    public Core.Entities.RequestSettings? RequestSettings { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnNameChanged { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (RequestSettings is not null)
+        {            
+            ParseParameters(RequestSettings.Url);
+        }
+    }
+
+    private void ParseParameters(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return;
+
+        RequestSettings?.Url = url;
+
+        var parser = new UrlParametersParser();
+
+        _queryParameters = parser.ParseParametersToList(RequestSettings.Url);
+    }
+
+    private async Task SendRequest()
+    {
+        if (string.IsNullOrWhiteSpace(RequestSettings.Url))
+        {
+            Snackbar.Add("Url is required");
+            return;
+        }
+
+        _isRequesting = true;
+
+        try
+        {
+            var request = CreateRequest();
+            var response = await HttpClient.SendAsync(request);
+            _responseContent = await response.Content.ReadAsStringAsync();            
+        }
+        catch (Exception exception)
+        {
+            Snackbar.Add(exception.Message, Severity.Error);
+        }
+
+        _isRequesting = false;
+    }
+
+    private HttpRequestMessage CreateRequest()
+    {
+        var request = new HttpRequestMessage
+        {
+            Method = new HttpMethod(RequestSettings.Verb),
+            RequestUri = new Uri(RequestSettings.Url)
+        };
+
+        if (!string.IsNullOrWhiteSpace(RequestSettings.Body))
+            request.Content = new StringContent(RequestSettings.Body);
+
+        request.Headers.Clear();
+        var requestHeader = _headerParameters.Where(x => x.HeaderType == HeaderType.Request).ToList();
+
+        foreach (var header in requestHeader)
+            request.Headers.Add(header.Key, header.Value);
+
+        if (request.Content != null) request.Content.Headers.Clear();
+
+        var contentHeaders = _headerParameters.Where(x => x.HeaderType == HeaderType.Content).ToList();
+
+        foreach (var header in contentHeaders)
+            request.Content.Headers.Add(header.Key, header.Value);
+
+        return request;
+    }
+
+    private void AddParameter(QueryStringParameter parameter)
+    {
+        _queryParameters.Add(parameter);
+        UpdateQueryString();
+    }
+
+    private void AddHeader(HeaderParameter headerParameter)
+    {
+        RequestSettings?.HeaderParameters.Add(headerParameter);
+    }
+
+    private void UpdateQueryString()
+    {
+        var baseUrl = RequestSettings.Url.Substring(0, RequestSettings.Url.IndexOf('?') + 1);
+        if (string.IsNullOrWhiteSpace(baseUrl)) baseUrl = RequestSettings.Url + "?";
+
+        baseUrl += string.Join('&', _queryParameters.Select(x => $"{x.Key}={x.Value}").ToList());
+
+        RequestSettings.Url = baseUrl;
+    }
+
+    private async Task SaveRequest()
+    {
+        if (RequestSettings is null) return;
+
+        using (var context = await DbContextFactory.CreateDbContextAsync())
+        {
+            if (RequestSettings.Id == 0)
+            {                
+                await context.RequestSettings.AddAsync(RequestSettings);
+            }
+            else
+            {                
+                context.Update(RequestSettings);
+            }
+
+            await context.SaveChangesAsync();
+        }
+
+        Snackbar.Add("Request saved successfully", Severity.Success);
+    }
+
+    private void NameValueChanged(string name)
+    {
+        RequestSettings?.Name = name;
+        OnNameChanged.InvokeAsync(name);
+    }
+}

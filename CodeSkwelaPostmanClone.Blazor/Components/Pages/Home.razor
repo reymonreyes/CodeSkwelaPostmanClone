@@ -8,219 +8,70 @@
 @inject IDbContextFactory<ApplicationDbContext> DbContextFactory
 
 <PageTitle>Blazter Api Helper</PageTitle>
-@* <MudPaper class="pa-2 mt-2">
-    <MudGrid>        
-        <MudItem sm="6" md="6" lg="6">
-            <MudNumericField @bind-Value="_repeat" Variant="Variant.Outlined" Placeholder="Repeat" Label="Repeat" ShrinkLabel="true" Min="1" Max="6"/>
-        </MudItem>
-        <MudItem sm="6" md="6" lg="6">
-            <MudNumericField @bind-Value="_delay" Variant="Variant.Outlined" Placeholder="Delay is milliseconds" Label="Delay" ShrinkLabel="true" Min="100" Max="5000" />
-        </MudItem>
-    </MudGrid>
-</MudPaper> *@
-<MudPaper class="pa-2 mt-2">
-    <MudGrid>       
-        <MudItem sm="10" md="10" lg="10"">
-            <MudTextField T="string" @bind-Value="_requestName" Variant="Variant.Outlined" Label="Name" ShrinkLabel="true"></MudTextField>
-        </MudItem>
-        <MudItem sm="2" md="2" lg="2" Class="pt-8 pb-1">
-            <MudButton OnClick="SaveRequest" Variant="Variant.Filled" FullWidth="true" Color="Color.Secondary" Style="height: 100%;">Save</MudButton>
-        </MudItem>
-    </MudGrid>
-</MudPaper>
-<MudPaper class="pa-2 mt-2">
-    <MudGrid>
-        <MudItem sm="1" md="1" lg="1">
-            <MudSelect @bind-Value="_httpVerb" Variant="Variant.Outlined">
-                <MudSelectItem Value="@("get")">GET</MudSelectItem>
-                <MudSelectItem Value="@("post")">POST</MudSelectItem>
-            </MudSelect>
-        </MudItem>
-        <MudItem sm="9" md="9" lg="9">
-            <MudTextField T="string" Value="_url" ValueChanged="ParseParameters" Variant="Variant.Outlined" Placeholder="Enter URL here"></MudTextField>
-        </MudItem>
-        <MudItem sm="2" md="2" lg="2">
-            <MudButton OnClick="SendRequest" Variant="Variant.Filled" FullWidth="true" Color="Color.Primary" Style="height: 100%;">Send</MudButton>
-        </MudItem>
-    </MudGrid>
-</MudPaper>
-<MudPaper Elevation="0" class="mt-7">
-    <MudGrid>
-        <MudItem sm="4" md="4" lg="4">
-            <QueryParamsComponent Parameters="_queryParameters" OnParamDeleted="UpdateQueryString" OnParamAdded="AddParameter" OnParamChanged="UpdateQueryString" />
-        </MudItem>
-        <MudItem sm="4" md="4" lg="4">
-            <RequestHeaders Parameters="_headerParameters" OnParamAdded="AddHeader" />            
-        </MudItem>
-        <MudItem sm="4" md="4" lg="4">
-            <MudText>Body</MudText>
-            <MudTextField @bind-Value="_requestBody" Lines="10" Margin="Margin.Dense" Variant="Variant.Outlined"></MudTextField>
-        </MudItem>
-    </MudGrid>
-</MudPaper>
-<MudPaper Elevation="2" class="mt-3">
-    <MudText Class="pa-2">Response</MudText>
-    @if (_isRequesting)
+
+<MudDynamicTabs @ref="@_requestTabs" @bind-ActivePanelIndex="@_activeTabIndex"
+                AddTab="@AddRequestTab" CloseTab="@CloseRequestTab"
+                AddIconToolTip="Add new request" CloseIconToolTip="Close this tab"
+                TabPanelsClass="px-2 py-2" Elevation="4" Rounded ApplyEffectsToContainer Class="mt-2">
+    @foreach (var request in _requests)
     {
-        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+        <MudTabPanel ID="@request.Id" @bind-Text="@request.Name" ShowCloseIcon="@true">
+            <RequestDetails RequestSettings="@request" OnNameChanged="@((nameVal) => UpdateRequestName(nameVal))"></RequestDetails>
+        </MudTabPanel>
     }
-    <MudGrid class="pa-3">
-        @foreach (var response in _responses)
+</MudDynamicTabs>
+
+    @code{    
+    int _activeTabIndex;
+    MudDynamicTabs? _requestTabs;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRequests();        
+    }
+
+    private List<Core.Entities.RequestSettings> _requests = new List<Core.Entities.RequestSettings>();
+    private async Task LoadRequests()
+    {
+        using (var context = DbContextFactory.CreateDbContext())
         {
-            <MudItem sm="12" md="12" lg="12">
-                <MudText>
-                    <pre style="white-space: pre-wrap;">
-                        <code>
-                            @response
-                        </code>
-                    </pre>
-                </MudText>
-            </MudItem>
+            _requests = await context.RequestSettings.ToListAsync();
         }
-    </MudGrid>
-</MudPaper>
-
-@code{
-    string _httpVerb = "get";
-    string _url = "";
-    string _responseContent = "";
-    string _requestBody = "";
-    string _requestName = "";
-    bool _isRequesting;
-    int _repeat = 1, _delay = 100, _maxRepeat = 5;
-    int _requestId;
-    List<QueryStringParameter> _queryParameters = new List<QueryStringParameter>();
-    List<HeaderParameter> _headerParameters = new List<HeaderParameter>();
-    List<string> _responses = new List<string>();
-    Core.Entities.RequestSettings? _requestSettings;
-
-    protected override void OnInitialized()
-    {
-
     }
 
-    private async Task SendRequest()
+    private void AddRequestTab()
     {
-        if (string.IsNullOrWhiteSpace(_url))
+        var newRequest = new Core.Entities.RequestSettings
         {
-            Snackbar.Add("Url is required");
-            return;
-        }
-
-        _isRequesting = true;
-
-        try
-        {
-            _responses.Clear();
-
-            for (int x = 1; x <= _repeat && x <= _maxRepeat; x++)
-            {
-                var request = CreateRequest();
-                var response = await HttpClient.SendAsync(request);
-                _responseContent = await response.Content.ReadAsStringAsync();
-                _responses.Add(_responseContent);
-
-                if (_repeat > 1)
-                    await Task.Delay(_delay);
-            }
-
-        }
-        catch (Exception exception)
-        {
-            Snackbar.Add(exception.Message, Severity.Error);
-        }
-
-        _isRequesting = false;
-    }   
-
-    private void ParseParameters(string url)
-    {
-        _url = url;
-
-        var parser = new UrlParametersParser();
-
-        _queryParameters = parser.ParseParametersToList(_url);
-    }
-
-    private void UpdateQueryString()
-    {
-        var baseUrl = _url.Substring(0, _url.IndexOf('?') + 1);
-        if (string.IsNullOrWhiteSpace(baseUrl)) baseUrl = _url + "?";
-
-
-        baseUrl += string.Join('&', _queryParameters.Select(x => $"{x.Key}={x.Value}").ToList());
-
-        _url = baseUrl;
-    }
-
-    private void AddParameter(QueryStringParameter parameter)
-    {
-        _queryParameters.Add(parameter);
-        UpdateQueryString();
-    }
-
-    private void AddHeader(HeaderParameter headerParameter)
-    {
-        _headerParameters.Add(headerParameter);
-    }
-
-    private HttpRequestMessage CreateRequest()
-    {
-        var request = new HttpRequestMessage
-        {
-            Method = new HttpMethod(_httpVerb),
-            RequestUri = new Uri(_url)
+            Name = $"Request {_requests.Count + 1}",
+            Url = "",
+            Verb = "get",
+            Body = "",
+            HeaderParameters = new List<HeaderParameter>()
         };
-
-        if (!string.IsNullOrWhiteSpace(_requestBody))
-            request.Content = new StringContent(_requestBody);
-
-        request.Headers.Clear();
-        var requestHeader = _headerParameters.Where(x => x.HeaderType == HeaderType.Request).ToList();
-
-        foreach (var header in requestHeader)
-            request.Headers.Add(header.Key, header.Value);
-
-        if (request.Content != null) request.Content.Headers.Clear();
-
-        var contentHeaders = _headerParameters.Where(x => x.HeaderType == HeaderType.Content).ToList();
-
-        foreach (var header in contentHeaders)
-            request.Content.Headers.Add(header.Key, header.Value);
-
-        return request;
+        _requests.Add(newRequest);
+        _activeTabIndex = _requests.Count - 1;
     }
 
-    private async Task SaveRequest()
-    {        
-        using (var context = await DbContextFactory.CreateDbContextAsync())
+    private void CloseRequestTab(MudTabPanel panel)
+    {
+        if (panel.ID is int)
         {
-            if(_requestId == 0)
-            {
-                _requestSettings = new Core.Entities.RequestSettings
-                {
-                    Name = _requestName,
-                    Url = _url,
-                    Verb = _httpVerb,
-                    Body = _requestBody,
-                    HeaderParameters = _headerParameters
-                };
-                await context.RequestSettings.AddAsync(_requestSettings);
-            }
-            else
-            {
-                _requestSettings.Name = _requestName;
-                _requestSettings.Url = _url;
-                _requestSettings.Verb = _httpVerb;
-                _requestSettings.Body = _requestBody;
-                _requestSettings.HeaderParameters = _headerParameters;             
-                context.RequestSettings.Update(_requestSettings);
-            }
-
-            await context.SaveChangesAsync();
-            _requestId = _requestSettings.Id;
+            RemoveTab((int)panel.ID);
         }
+    }
 
-        Snackbar.Add("Request saved successfully", Severity.Success);
+    private void RemoveTab(int id)
+    {
+        var request = _requests.FirstOrDefault(x => x.Id == id);
+        _requests.Remove(request);
+    }
+
+    private void UpdateRequestName(string nameVal)
+    {
+        var request = _requests[_activeTabIndex];
+        request.Name = nameVal;
+
+        StateHasChanged();
     }
 }

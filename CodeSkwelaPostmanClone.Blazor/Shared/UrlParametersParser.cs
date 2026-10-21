@@ -13,6 +13,8 @@
         {
             var result = new List<QueryStringParameter>();
 
+            if (string.IsNullOrWhiteSpace(url)) return result;
+
             var parameters = ParseParameters(url);
             var splitParams = parameters.Split('&');
 
