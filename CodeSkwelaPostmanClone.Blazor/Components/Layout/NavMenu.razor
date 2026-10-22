@@ -29,6 +29,12 @@
 
             StateHasChanged();
         };
+        
+        RequestDetailsState.OnRequestAdded += (request) =>
+        {
+            _requests.Add(request);
+            StateHasChanged();
+        };
 
         await LoadRequests();
     }

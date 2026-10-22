@@ -18,7 +18,7 @@
     @foreach (var request in _requests)
     {
         <MudTabPanel ID="@request.Id" @bind-Text="@request.Name" ShowCloseIcon="@true">
-            <RequestDetails RequestSettings="@request" OnNameChanged="@((nameVal) => UpdateRequestName(nameVal))" OnRequestDeleted="DeleteRequest"></RequestDetails>
+            <RequestDetails RequestSettings="@request" OnNameChanged="@((nameVal) => UpdateRequestName(nameVal))" OnRequestDeleted="DeleteRequest" OnRequestAdded="AddRequest"></RequestDetails>
         </MudTabPanel>
     }
 </MudDynamicTabs>
@@ -111,5 +111,10 @@
     {
         RemoveTab(requestId);
         RequestDetailsState.DeleteRequest(requestId);
+    }
+
+    private void AddRequest(Core.Entities.RequestSettings request)
+    {
+        RequestDetailsState.AddRequest(request);
     }
 }

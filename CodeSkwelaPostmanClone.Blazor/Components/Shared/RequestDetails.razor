@@ -81,6 +81,8 @@
     public EventCallback<string> OnNameChanged { get; set; }
     [Parameter]
     public EventCallback<int> OnRequestDeleted { get; set; }
+    [Parameter]
+    public EventCallback<Core.Entities.RequestSettings> OnRequestAdded { get; set; }
 
     protected override void OnParametersSet()
     {
@@ -176,12 +178,14 @@
     private async Task SaveRequest()
     {
         if (RequestSettings is null) return;
+        bool isNewRequest = false;
 
         using (var context = await DbContextFactory.CreateDbContextAsync())
         {
             if (RequestSettings.Id == 0)
             {                
                 await context.RequestSettings.AddAsync(RequestSettings);
+                isNewRequest = true;
             }
             else
             {                
@@ -189,6 +193,11 @@
             }
 
             await context.SaveChangesAsync();
+
+            if (isNewRequest)
+            {
+                OnRequestAdded.InvokeAsync(RequestSettings);
+            }
         }
 
         Snackbar.Add("Request saved successfully", Severity.Success);
