@@ -1,10 +1,37 @@
-﻿
-<MudNavMenu>
-    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Requests</MudNavLink>
-    <MudNavLink Href="counter" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Add">Counter</MudNavLink>
-    
-    <MudNavLink Href="weather" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.List">Weather</MudNavLink>
+﻿@using CodeSkwelaPostmanClone.Blazor.Components.Shared
+@using CodeSkwelaPostmanClone.Blazor.Infrastructure.Data
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<ApplicationDbContext> DbContextFactory
+@inject RequestsNavigationMenuState RequestsNavigationMenuState
 
+<MudNavMenu>
+    <MudNavGroup Title="Requests" Expanded="true" Icon="@Icons.Material.Filled.List">
+        @foreach (var request in _requests)
+        {
+            <MudNavLink OnClick="@(() => LoadRequest(request.Id))">@request.Name</MudNavLink>
+        }
+    </MudNavGroup>
 </MudNavMenu>
 
+@code{
+    List<Core.Entities.RequestSettings> _requests = new List<Core.Entities.RequestSettings>();
+    //int _requestMenuIndex;
 
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRequests();
+    }
+
+    private async Task LoadRequests()
+    {
+        using (var context = DbContextFactory.CreateDbContext())
+        {
+            _requests = await context.RequestSettings.ToListAsync();
+        }
+    }
+
+    private void LoadRequest(int id)
+    {
+        RequestsNavigationMenuState.SelectedRequest = id;
+    }
+}

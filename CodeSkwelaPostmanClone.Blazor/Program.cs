@@ -1,4 +1,5 @@
 using CodeSkwelaPostmanClone.Blazor.Components;
+using CodeSkwelaPostmanClone.Blazor.Components.Shared;
 using CodeSkwelaPostmanClone.Blazor.Infrastructure.Data;
 using MudBlazor.Services;
 
@@ -19,6 +20,7 @@ namespace CodeSkwelaPostmanClone.Blazor
 
             builder.Services.AddHttpClient();
             builder.Services.AddDbContextFactory<ApplicationDbContext>();
+            builder.Services.AddScoped<RequestsNavigationMenuState>();
 
             var app = builder.Build();
 

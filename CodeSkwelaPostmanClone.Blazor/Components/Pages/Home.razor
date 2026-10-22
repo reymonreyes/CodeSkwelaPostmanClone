@@ -6,6 +6,7 @@
 @inject ISnackbar Snackbar
 @inject HttpClient HttpClient
 @inject IDbContextFactory<ApplicationDbContext> DbContextFactory
+@inject RequestsNavigationMenuState RequestsNavigationMenuState
 
 <PageTitle>Blazter Api Helper</PageTitle>
 
@@ -21,13 +22,35 @@
     }
 </MudDynamicTabs>
 
-    @code{    
+    @code{
     int _activeTabIndex;
     MudDynamicTabs? _requestTabs;
 
     protected override async Task OnInitializedAsync()
     {
+        RequestsNavigationMenuState.OnRequestSelected += HandleSelectedRequest;
         await LoadRequests();        
+    }
+
+    private void HandleSelectedRequest(int requestId)
+    {
+        var requestTabExist = _requestTabs.Panels.FirstOrDefault(x => x.ID is int && (int)x.ID == requestId);
+
+        if (requestTabExist is not null)
+            _requestTabs.ActivatePanelAsync((object)requestId).Wait();
+        else
+        {
+            using (var context = DbContextFactory.CreateDbContext())
+            {
+                var request = context.RequestSettings.FirstOrDefault(x => x.Id == requestId);
+                if (request is not null)
+                {
+                    _requests.Add(request);
+                    _activeTabIndex = _requests.Count - 1;
+                    StateHasChanged();
+                }
+            }
+        }
     }
 
     private List<Core.Entities.RequestSettings> _requests = new List<Core.Entities.RequestSettings>();
@@ -41,9 +64,17 @@
 
     private void AddRequestTab()
     {
+        int requestsCount = 0;
+
+        using (var context = DbContextFactory.CreateDbContext())
+        {
+            requestsCount = context.RequestSettings.Count();
+        }
+
+
         var newRequest = new Core.Entities.RequestSettings
         {
-            Name = $"Request {_requests.Count + 1}",
+            Name = $"Request {requestsCount + 1}",
             Url = "",
             Verb = "get",
             Body = "",
