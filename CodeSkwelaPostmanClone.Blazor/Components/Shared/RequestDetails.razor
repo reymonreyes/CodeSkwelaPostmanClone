@@ -4,14 +4,18 @@
 @inject ISnackbar Snackbar
 @inject HttpClient HttpClient
 @inject IDbContextFactory<ApplicationDbContext> DbContextFactory
+@inject IDialogService DialogService
 
 <MudPaper class="pa-2 mt-2">
     <MudGrid>
         <MudItem sm="10" md="10" lg="10">
             <MudTextField T="string" Value="RequestSettings?.Name" ValueChanged="NameValueChanged" Variant="Variant.Outlined" Label="Name" ShrinkLabel="true"></MudTextField>
         </MudItem>
-        <MudItem sm="2" md="2" lg="2" Class="pt-8 pb-1">
+        <MudItem sm="1" md="1" lg="1" Class="pt-8 pb-1">
             <MudButton OnClick="SaveRequest" Variant="Variant.Filled" FullWidth="true" Color="Color.Secondary" Style="height: 100%;">Save</MudButton>
+        </MudItem>
+        <MudItem sm="1" md="1" lg="1" Class="pt-8 pb-1">
+            <MudButton OnClick="DeleteRequest" Variant="Variant.Filled" FullWidth="true" Color="Color.Warning" Style="height: 100%;">Delete</MudButton>
         </MudItem>
     </MudGrid>
 </MudPaper>
@@ -75,6 +79,8 @@
 
     [Parameter]
     public EventCallback<string> OnNameChanged { get; set; }
+    [Parameter]
+    public EventCallback<int> OnRequestDeleted { get; set; }
 
     protected override void OnParametersSet()
     {
@@ -192,5 +198,29 @@
     {
         RequestSettings?.Name = name;
         OnNameChanged.InvokeAsync(name);
+    }
+
+    private async Task DeleteRequest()
+    {
+        if (RequestSettings is null) return;
+
+        bool? confirm = await DialogService.ShowMessageBoxAsync(
+            "Delete Request",
+            "Are you sure you want to delete this request?",
+            yesText: "Delete", cancelText: "Cancel");
+
+        if(confirm is null) return;
+
+        using (var context = await DbContextFactory.CreateDbContextAsync())
+        {
+            if (RequestSettings.Id != 0)
+            {
+                context.RequestSettings.Remove(RequestSettings);
+                await context.SaveChangesAsync();
+
+                OnRequestDeleted.InvokeAsync(RequestSettings.Id);
+            }
+        }
+        Snackbar.Add("Request deleted successfully", Severity.Success);
     }
 }

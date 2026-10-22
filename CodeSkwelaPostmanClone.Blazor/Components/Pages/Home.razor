@@ -7,6 +7,7 @@
 @inject HttpClient HttpClient
 @inject IDbContextFactory<ApplicationDbContext> DbContextFactory
 @inject RequestsNavigationMenuState RequestsNavigationMenuState
+@inject RequestDetailsState RequestDetailsState
 
 <PageTitle>Blazter Api Helper</PageTitle>
 
@@ -17,7 +18,7 @@
     @foreach (var request in _requests)
     {
         <MudTabPanel ID="@request.Id" @bind-Text="@request.Name" ShowCloseIcon="@true">
-            <RequestDetails RequestSettings="@request" OnNameChanged="@((nameVal) => UpdateRequestName(nameVal))"></RequestDetails>
+            <RequestDetails RequestSettings="@request" OnNameChanged="@((nameVal) => UpdateRequestName(nameVal))" OnRequestDeleted="DeleteRequest"></RequestDetails>
         </MudTabPanel>
     }
 </MudDynamicTabs>
@@ -104,5 +105,11 @@
         request.Name = nameVal;
 
         StateHasChanged();
+    }
+
+    private void DeleteRequest(int requestId)
+    {
+        RemoveTab(requestId);
+        RequestDetailsState.DeleteRequest(requestId);
     }
 }

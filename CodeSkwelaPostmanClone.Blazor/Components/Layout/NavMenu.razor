@@ -3,6 +3,7 @@
 @using Microsoft.EntityFrameworkCore
 @inject IDbContextFactory<ApplicationDbContext> DbContextFactory
 @inject RequestsNavigationMenuState RequestsNavigationMenuState
+@inject RequestDetailsState RequestDetailsState
 
 <MudNavMenu>
     <MudNavGroup Title="Requests" Expanded="true" Icon="@Icons.Material.Filled.List">
@@ -15,10 +16,20 @@
 
 @code{
     List<Core.Entities.RequestSettings> _requests = new List<Core.Entities.RequestSettings>();
-    //int _requestMenuIndex;
-
+    
     protected override async Task OnInitializedAsync()
     {
+        RequestDetailsState.OnRequestDeleted += (requestId) =>
+        {
+            var existingRequest = _requests.FirstOrDefault(r => r.Id == requestId);
+            if (existingRequest is not null)
+            {
+                _requests.Remove(existingRequest);
+            }
+
+            StateHasChanged();
+        };
+
         await LoadRequests();
     }
 
