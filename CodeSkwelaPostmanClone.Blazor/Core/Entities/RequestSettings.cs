@@ -4,6 +4,10 @@ namespace CodeSkwelaPostmanClone.Blazor.Core.Entities
 {
     public class RequestSettings
     {
+        public RequestSettings()
+        {
+            HeaderParameters = new List<HeaderParameter>();
+        }
         public int Id { get; set; }
         public string Name { get; set; }
         public string Verb { get; set; }
