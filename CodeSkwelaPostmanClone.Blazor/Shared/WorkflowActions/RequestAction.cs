@@ -1,4 +1,5 @@
 ﻿using CodeSkwelaPostmanClone.Blazor.Core.Entities;
+using System.Diagnostics;
 
 namespace CodeSkwelaPostmanClone.Blazor.Shared.WorkflowActions
 {
@@ -6,7 +7,7 @@ namespace CodeSkwelaPostmanClone.Blazor.Shared.WorkflowActions
     {
         private Core.Entities.RequestSettings _requestSettings;
         private HttpClient _httpClient;
-        public RequestAction(Core.Entities.RequestSettings requestSettings, HttpClient httpClient)
+        public RequestAction(string name, Core.Entities.RequestSettings requestSettings, HttpClient httpClient) : base(name)
         {
             _requestSettings = requestSettings;
             _httpClient = httpClient;
@@ -46,11 +47,15 @@ namespace CodeSkwelaPostmanClone.Blazor.Shared.WorkflowActions
                 throw new ArgumentNullException(nameof(RequestSettings.Url));
             }
 
+            Console.WriteLine(this.Name);
+
             try
             {
                 var request = CreateRequest(_requestSettings);
                 var response = await _httpClient.SendAsync(request);
                 var responseContent = await response.Content.ReadAsStringAsync();
+
+                Console.WriteLine(responseContent);
 
                 return responseContent;
             }

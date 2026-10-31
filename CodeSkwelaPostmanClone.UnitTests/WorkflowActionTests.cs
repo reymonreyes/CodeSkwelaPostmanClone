@@ -28,20 +28,20 @@ namespace CodeSkwelaPostmanClone.UnitTests
         }
 
         [Fact]
-        public void Run_MustBeCalledOnce()
+        public async Task Run_MustBeCalledOnce()
         {
             var workflow = new Workflow();
             var requestSettings = new RequestSettings { Url = "https://www.example.com", Verb = "get" };            
             var mockRequestAction = Substitute.For<RequestAction>(requestSettings, GetHttpClient());
             workflow.AddAction(mockRequestAction);
 
-            workflow.Run();
+            await workflow.Run();
 
             mockRequestAction.Received(1).Run(Arg.Any<string>());
         }
 
         [Fact]
-        public void Run_NextActionMustBeCalledOnce()
+        public async Task Run_NextActionMustBeCalledOnce()
         {
             var workflow = new Workflow();
             var requestSettings = new RequestSettings { Url = "https://www.example.com", Verb = "get" };
@@ -51,7 +51,7 @@ namespace CodeSkwelaPostmanClone.UnitTests
             var mockRequestAction2 = Substitute.For<RequestAction>(requestSettings, GetHttpClient());
             workflow.AddAction(mockRequestAction2);
 
-            workflow.Run();
+            await workflow.Run();
 
             mockRequestAction2.Received(1).Run(Arg.Any<string>());
         }

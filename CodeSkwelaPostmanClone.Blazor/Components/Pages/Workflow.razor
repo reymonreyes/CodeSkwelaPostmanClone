@@ -1,0 +1,104 @@
+﻿@page "/workflows/basic"
+@using CodeSkwelaPostmanClone.Blazor.Infrastructure.Data
+@using CodeSkwelaPostmanClone.Blazor.Shared
+@using CodeSkwelaPostmanClone.Blazor.Shared.WorkflowActions
+@using Microsoft.EntityFrameworkCore
+@using Shared = CodeSkwelaPostmanClone.Blazor.Shared
+@inject IHttpClientFactory HttpClientFactory
+@inject IDbContextFactory<ApplicationDbContext> DbContextFactory
+@inject ISnackbar Snackbar
+
+<MudPaper Class="mt-2 mb-2">
+    <MudToolBar>
+        <MudMenu Icon="@Icons.Material.Filled.Add" AriaLabel="Open user menu">
+            <MudMenuItem Label="Request" OnClick="AddRequest" />
+            <MudDivider/>
+            <MudMenuItem Label="Repeat" />
+            <MudMenuItem Label="Delay" />
+        </MudMenu>
+        <MudIconButton OnClick="RunWorkflow" Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Success" />        
+    </MudToolBar>
+</MudPaper>
+<MudPaper>
+    <MudStack Spacing="0">
+        @if (_workflow is not null)
+        {
+            var currentAction = _workflow.GetRootAction();
+            while (currentAction is not null)
+            {
+                var actionName = currentAction.Name;
+
+                <MudPaper Square="true" Outlined="true" Class="pa-1">
+                    <MudText>@actionName</MudText>
+                </MudPaper>
+
+                if (currentAction.HasNextAction())
+                {
+                    currentAction = currentAction.GetNextAction();
+                }
+                else
+                {
+                    break;
+                }
+            };
+        }           
+    </MudStack>
+</MudPaper>
+<MudMessageBox @ref="_mudMessageBox" Title="Select Request" CancelText="Cancel">
+    <MessageContent>
+        <MudText>Select a request and click Add to proceed.</MudText>
+        <MudList @bind-SelectedValue="_selectedRequest">
+        @foreach(var request in _requests)
+        {
+            <MudListItem Value="request">@request.Name</MudListItem>
+        }
+        </MudList>
+    </MessageContent>
+    <YesButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary">Add</MudButton>
+    </YesButton>
+</MudMessageBox>
+
+@code {
+    MudMessageBox _mudMessageBox;
+    Core.Entities.RequestSettings _selectedRequest;
+    List<Core.Entities.RequestSettings> _requests = new List<Core.Entities.RequestSettings>();
+    List<Core.Entities.RequestSettings> _actionRequests = new List<Core.Entities.RequestSettings>();
+    Shared.Workflow _workflow = new Shared.Workflow();
+
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+
+    private async Task LoadRequests()
+    {
+        using (var context = DbContextFactory.CreateDbContext())
+        {
+            _requests = await context.RequestSettings.ToListAsync();
+        }
+    }
+
+    private async Task AddRequest()
+    {
+        var tempRoot = _workflow.GetRootAction();
+
+        await LoadRequests();
+
+        var result = await _mudMessageBox.ShowAsync();
+
+        if(result.HasValue && result.Value)
+        {
+            var requestWorkflowAction = new RequestAction(_selectedRequest.Name, _selectedRequest, HttpClientFactory.CreateClient());
+            _workflow.AddAction(requestWorkflowAction);
+            //_actionRequests.Add(_selectedRequest);
+        }
+    }
+
+    private async Task RunWorkflow()
+    {
+        await _workflow.Run();
+
+        //await RunRequest(_actionRequests.FirstOrDefault()!);
+    }    
+}

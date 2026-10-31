@@ -25,12 +25,12 @@ namespace CodeSkwelaPostmanClone.Blazor.Shared
             }
         }
 
-        public void Run()
+        public async Task Run()
         {
             var currentAction = _rootAction;
             do
             {
-                currentAction.Run(null);
+                await currentAction.Run(null);
                 if (currentAction.HasNextAction())
                     currentAction = currentAction.GetNextAction();
                 else
@@ -38,11 +38,23 @@ namespace CodeSkwelaPostmanClone.Blazor.Shared
             }
             while (currentAction is not null);
         }
+
+        public WorkflowAction GetRootAction()
+        {
+            return _rootAction;
+        }
     }
 
     public class WorkflowAction : IWorkflowAction
     {
         private WorkflowAction _nextAction;
+
+        public WorkflowAction(string name)
+        {
+            Name = name;
+        }
+
+        public string Name { get; set; }
 
         public void SetNextAction(WorkflowAction action)
         {
