@@ -1,0 +1,30 @@
+﻿@using CoreShared = CodeSkwelaPostmanClone.Blazor.Shared
+
+@{
+    var actionName = Action?.Name;
+}
+
+<MudText>@_actionName</MudText>
+
+@code {
+    private string? _response;
+    private string? _actionName;
+
+    [Parameter]
+    public CoreShared.WorkflowAction? Action { get; set; }
+    [Parameter]
+    public EventCallback<string?> OnResponseOutput { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Action?.OnResponseOutput += DisplayResponse;
+        _actionName = Action.Name;
+    }
+
+    private async Task DisplayResponse(string? response)
+    {
+        Console.WriteLine(response);
+        _response = response;
+        await OnResponseOutput.InvokeAsync(response);
+    }
+}

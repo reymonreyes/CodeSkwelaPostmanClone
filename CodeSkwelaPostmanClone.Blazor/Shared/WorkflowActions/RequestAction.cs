@@ -6,8 +6,8 @@ namespace CodeSkwelaPostmanClone.Blazor.Shared.WorkflowActions
     public class RequestAction : WorkflowAction, IWorkflowAction
     {
         private Core.Entities.RequestSettings _requestSettings;
-        private HttpClient _httpClient;
-        public RequestAction(string name, Core.Entities.RequestSettings requestSettings, HttpClient httpClient) : base(name)
+        private HttpClient _httpClient;        
+        public RequestAction(string name, Core.Entities.RequestSettings requestSettings, HttpClient httpClient, Func<string?, Task> callback = null) : base(name, callback)
         {
             _requestSettings = requestSettings;
             _httpClient = httpClient;
@@ -51,12 +51,15 @@ namespace CodeSkwelaPostmanClone.Blazor.Shared.WorkflowActions
 
             try
             {
+                OnResponseOutput?.Invoke($"Running {this.Name}...");
+
                 var request = CreateRequest(_requestSettings);
                 var response = await _httpClient.SendAsync(request);
                 var responseContent = await response.Content.ReadAsStringAsync();
 
                 Console.WriteLine(responseContent);
 
+                OnResponseOutput?.Invoke(responseContent);
                 return responseContent;
             }
             catch (Exception exception)

@@ -48,10 +48,12 @@ namespace CodeSkwelaPostmanClone.Blazor.Shared
     public class WorkflowAction : IWorkflowAction
     {
         private WorkflowAction _nextAction;
+        public Func<string?, Task> OnResponseOutput { get; set; }
 
-        public WorkflowAction(string name)
+        public WorkflowAction(string name, Func<string?, Task> callback = null)
         {
             Name = name;
+            OnResponseOutput += callback;
         }
 
         public string Name { get; set; }

@@ -1,4 +1,5 @@
 ﻿@page "/workflows/basic"
+@using CodeSkwelaPostmanClone.Blazor.Components.Shared
 @using CodeSkwelaPostmanClone.Blazor.Infrastructure.Data
 @using CodeSkwelaPostmanClone.Blazor.Shared
 @using CodeSkwelaPostmanClone.Blazor.Shared.WorkflowActions
@@ -8,7 +9,7 @@
 @inject IDbContextFactory<ApplicationDbContext> DbContextFactory
 @inject ISnackbar Snackbar
 
-<MudPaper Class="mt-2 mb-2">
+<MudPaper Class="ma-2">
     <MudToolBar>
         <MudMenu Icon="@Icons.Material.Filled.Add" AriaLabel="Open user menu">
             <MudMenuItem Label="Request" OnClick="AddRequest" />
@@ -19,30 +20,46 @@
         <MudIconButton OnClick="RunWorkflow" Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Success" />        
     </MudToolBar>
 </MudPaper>
-<MudPaper>
-    <MudStack Spacing="0">
-        @if (_workflow is not null)
-        {
-            var currentAction = _workflow.GetRootAction();
-            while (currentAction is not null)
-            {
-                var actionName = currentAction.Name;
+<MudPaper Class="ma-2">
+    <MudGrid Class="flex-grow-1" Style="height: 100%;max-height: calc(100vh - 64px);" Spacing="0">
+        <MudItem xs="6" sm="6" md="6" lg="6" Class="d-flex flex-column flex-grow-1 overflow-hidden" Style="height: 100%;">
+            <MudStack Spacing="0" StretchItems="StretchItems.All">
+                @if (_workflow is not null)
+                {
+                    var currentAction = _workflow.GetRootAction();
+                    while (currentAction is not null)
+                    {
+                        var actionName = currentAction.Name;
 
-                <MudPaper Square="true" Outlined="true" Class="pa-1">
-                    <MudText>@actionName</MudText>
+                        <MudPaper Square="true" Outlined="true" Class="pa-1">
+                            <WorkflowAction Action="currentAction" OnResponseOutput="DisplayResponse"></WorkflowAction>
+                        </MudPaper>
+
+                        if (currentAction.HasNextAction())
+                        {
+                            currentAction = currentAction.GetNextAction();
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    ;
+                }
+            </MudStack>
+        </MudItem>
+        <MudItem xs="6" sm="6" md="6" lg="6" Class="d-flex flex-column flex-grow-1" style="height: 100%;">
+            <MudStack Spacing="0" StretchItems="StretchItems.All" Class="flex-grow-1 overflow-hidden" Style="height: 100%;">
+                <MudPaper Square="true" Outlined="true"  Class="flex-grow-1 pa-4 overflow-y-auto" Style="height: 100%;">
+                    <MudText>Console output</MudText>
+                    @foreach (var response in _responses)
+                    {
+                        <MudText>@response</MudText>
+                    }
                 </MudPaper>
-
-                if (currentAction.HasNextAction())
-                {
-                    currentAction = currentAction.GetNextAction();
-                }
-                else
-                {
-                    break;
-                }
-            };
-        }           
-    </MudStack>
+            </MudStack>
+        </MudItem>
+    </MudGrid>
 </MudPaper>
 <MudMessageBox @ref="_mudMessageBox" Title="Select Request" CancelText="Cancel">
     <MessageContent>
@@ -63,14 +80,9 @@
     MudMessageBox _mudMessageBox;
     Core.Entities.RequestSettings _selectedRequest;
     List<Core.Entities.RequestSettings> _requests = new List<Core.Entities.RequestSettings>();
-    List<Core.Entities.RequestSettings> _actionRequests = new List<Core.Entities.RequestSettings>();
     Shared.Workflow _workflow = new Shared.Workflow();
-
-    protected override async Task OnInitializedAsync()
-    {
-
-    }
-
+    List<string> _responses = new List<string>();
+    
     private async Task LoadRequests()
     {
         using (var context = DbContextFactory.CreateDbContext())
@@ -91,14 +103,18 @@
         {
             var requestWorkflowAction = new RequestAction(_selectedRequest.Name, _selectedRequest, HttpClientFactory.CreateClient());
             _workflow.AddAction(requestWorkflowAction);
-            //_actionRequests.Add(_selectedRequest);
         }
     }
 
     private async Task RunWorkflow()
     {
         await _workflow.Run();
+    }
 
-        //await RunRequest(_actionRequests.FirstOrDefault()!);
-    }    
+    private void DisplayResponse(string? response)
+    {
+        Console.WriteLine(response);
+        _responses.Add(response);
+    }
+
 }
