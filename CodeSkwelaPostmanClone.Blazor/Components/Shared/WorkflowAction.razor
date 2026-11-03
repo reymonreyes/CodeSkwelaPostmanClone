@@ -1,10 +1,6 @@
 ﻿@using CoreShared = CodeSkwelaPostmanClone.Blazor.Shared
 
-@{
-    var actionName = Action?.Name;
-}
-
-<MudText>@_actionName</MudText>
+<MudText>@Action?.Name</MudText>
 
 @code {
     private string? _response;

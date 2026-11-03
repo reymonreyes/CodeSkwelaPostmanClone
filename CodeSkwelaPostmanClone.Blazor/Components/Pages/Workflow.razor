@@ -15,7 +15,7 @@
             <MudMenuItem Label="Request" OnClick="AddRequest" />
             <MudDivider/>
             <MudMenuItem Label="Repeat" />
-            <MudMenuItem Label="Delay" />
+            <MudMenuItem Label="Delay" OnClick="AddDelay" />
         </MudMenu>
         <MudIconButton OnClick="RunWorkflow" Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Success" />        
     </MudToolBar>
@@ -24,28 +24,22 @@
     <MudGrid Class="flex-grow-1" Style="height: 100%;max-height: calc(100vh - 64px);" Spacing="0">
         <MudItem xs="6" sm="6" md="6" lg="6" Class="d-flex flex-column flex-grow-1 overflow-hidden" Style="height: 100%;">
             <MudStack Spacing="0" StretchItems="StretchItems.All">
-                @if (_workflow is not null)
+                @if(_workflow is not null)
                 {
-                    var currentAction = _workflow.GetRootAction();
-                    while (currentAction is not null)
+                    foreach (var action in _workflow)
                     {
-                        var actionName = currentAction.Name;
-
                         <MudPaper Square="true" Outlined="true" Class="pa-1">
-                            <WorkflowAction Action="currentAction" OnResponseOutput="DisplayResponse"></WorkflowAction>
-                        </MudPaper>
-
-                        if (currentAction.HasNextAction())
+                        @if (action is Shared.WorkflowActions.DelayAction delayAction)
                         {
-                            currentAction = currentAction.GetNextAction();
+                            <DelayAction Action="delayAction" OnResponseOutput="DisplayResponse" />
                         }
                         else
                         {
-                            break;
+                            <WorkflowAction Action="action" OnResponseOutput="DisplayResponse" />
                         }
+                        </MudPaper>
                     }
-                    ;
-                }
+                }                
             </MudStack>
         </MudItem>
         <MudItem xs="6" sm="6" md="6" lg="6" Class="d-flex flex-column flex-grow-1" style="height: 100%;">
@@ -117,4 +111,9 @@
         _responses.Add(response);
     }
 
+    private async Task AddDelay()
+    {
+        var delayAction = new Shared.WorkflowActions.DelayAction("Delay 2 seconds", 2000);
+        _workflow.AddAction(delayAction);
+    }
 }

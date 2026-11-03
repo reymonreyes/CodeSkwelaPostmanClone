@@ -1,0 +1,28 @@
+﻿@using CoreShared = CodeSkwelaPostmanClone.Blazor.Shared
+<MudNumericField Label="Delay (ms)" @bind-Value="Action.DelayInMilliSeconds"/>
+
+@code {
+    private string? _response;
+    private string? _actionName;
+    private int _delayMs = 1000;
+
+    [Parameter]
+    public CoreShared.WorkflowActions.DelayAction? Action { get; set; }
+
+    [Parameter]
+    public int DelayInMilliSeconds { get; set; } = 1000;
+    [Parameter]
+    public EventCallback<string?> OnResponseOutput { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Action?.OnResponseOutput += DisplayResponse;
+    }
+
+    private async Task DisplayResponse(string? response)
+    {
+        Console.WriteLine(response);
+        _response = response;
+        await OnResponseOutput.InvokeAsync(response);
+    }
+}
