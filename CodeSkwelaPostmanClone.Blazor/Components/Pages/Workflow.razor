@@ -14,7 +14,7 @@
         <MudMenu Icon="@Icons.Material.Filled.Add" AriaLabel="Open user menu">
             <MudMenuItem Label="Request" OnClick="AddRequest" />
             <MudDivider/>
-            <MudMenuItem Label="Repeat" />
+            <MudMenuItem Label="Repeat" OnClick="AddRepeat" />
             <MudMenuItem Label="Delay" OnClick="AddDelay" />
         </MudMenu>
         <MudIconButton OnClick="RunWorkflow" Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Success" />        
@@ -32,6 +32,10 @@
                         @if (action is Shared.WorkflowActions.DelayAction delayAction)
                         {
                             <DelayAction Action="delayAction" OnResponseOutput="DisplayResponse" />
+                        }
+                        else if (action is Shared.WorkflowActions.RepeatAction repeatAction)
+                        {
+                            <RepeatAction Action="repeatAction" OnResponseOutput="DisplayResponse" />    
                         }
                         else
                         {
@@ -87,8 +91,6 @@
 
     private async Task AddRequest()
     {
-        var tempRoot = _workflow.GetRootAction();
-
         await LoadRequests();
 
         var result = await _mudMessageBox.ShowAsync();
@@ -113,7 +115,13 @@
 
     private async Task AddDelay()
     {
-        var delayAction = new Shared.WorkflowActions.DelayAction("Delay 2 seconds", 2000);
+        var delayAction = new Shared.WorkflowActions.DelayAction($"Delay");
         _workflow.AddAction(delayAction);
+    }
+
+    private async Task AddRepeat()
+    {
+        var repeatAction = new Shared.WorkflowActions.RepeatAction("Repeat", 1);
+        _workflow.AddAction(repeatAction);
     }
 }

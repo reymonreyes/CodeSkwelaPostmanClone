@@ -1,0 +1,94 @@
+﻿@using CodeSkwelaPostmanClone.Blazor.Infrastructure.Data
+@using CoreShared = CodeSkwelaPostmanClone.Blazor.Shared
+@using Microsoft.EntityFrameworkCore
+@inject IHttpClientFactory HttpClientFactory
+@inject IDbContextFactory<ApplicationDbContext> DbContextFactory
+
+<MudStack Row>
+    <MudNumericField Label="Repeat Count" @bind-Value="Action.RepeatCount" />
+    <MudMenu Icon="@Icons.Material.Filled.Add" AriaLabel="Open user menu">
+        <MudMenuItem Label="Request" OnClick="AddRequest" />
+        <MudDivider />
+        @* <MudMenuItem Label="Repeat" OnClick="AddRepeat" /> *@
+        <MudMenuItem Label="Delay" OnClick="AddDelay" />
+    </MudMenu>
+</MudStack>
+<MudPaper Elevation="0" Class="pa-2">
+    @foreach (var action in Action.ChildActions)
+    {
+    <MudPaper Class="pa-2" Square="true" Outlined="true">
+        @if (action is CoreShared.WorkflowActions.DelayAction delayAction)
+        {
+            <DelayAction Action="delayAction" OnResponseOutput="DisplayResponse" />
+        }
+        else
+        {
+            <WorkflowAction Action="action" OnResponseOutput="DisplayResponse" />
+        }
+        </MudPaper>
+    }
+</MudPaper>
+<MudMessageBox @ref="_mudMessageBox" Title="Select Request" CancelText="Cancel">
+    <MessageContent>
+        <MudText>Select a request and click Add to proceed.</MudText>
+        <MudList @bind-SelectedValue="_selectedRequest">
+            @foreach (var request in _requests)
+            {
+                <MudListItem Value="request">@request.Name</MudListItem>
+            }
+        </MudList>
+    </MessageContent>
+    <YesButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary">Add</MudButton>
+    </YesButton>
+</MudMessageBox>
+
+@code {
+    MudMessageBox _mudMessageBox;
+    Core.Entities.RequestSettings _selectedRequest;
+    List<Core.Entities.RequestSettings> _requests = new List<Core.Entities.RequestSettings>();
+
+    [Parameter]
+    public CoreShared.WorkflowActions.RepeatAction? Action { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> OnResponseOutput { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Action?.OnResponseOutput += DisplayResponse;
+    }
+
+    private async Task DisplayResponse(string? response)
+    {
+        Console.WriteLine(response);
+        await OnResponseOutput.InvokeAsync(response);
+    }
+
+    private async Task AddDelay()
+    {
+        var delayAction = new CoreShared.WorkflowActions.DelayAction("Delay 2 seconds", 2000);
+        Action?.ChildActions.Add(delayAction);
+    }
+
+    private async Task AddRequest()
+    {
+        await LoadRequests();
+
+        var result = await _mudMessageBox.ShowAsync();
+
+        if (result.HasValue && result.Value)
+        {
+            var requestWorkflowAction = new CoreShared.WorkflowActions.RequestAction(_selectedRequest.Name, _selectedRequest, HttpClientFactory.CreateClient());
+            Action?.ChildActions.Add(requestWorkflowAction);
+        }
+    }
+
+    private async Task LoadRequests()
+    {
+        using (var context = DbContextFactory.CreateDbContext())
+        {
+            _requests = await context.RequestSettings.ToListAsync();
+        }
+    }
+}
