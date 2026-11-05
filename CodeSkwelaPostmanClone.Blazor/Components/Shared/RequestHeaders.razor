@@ -86,8 +86,6 @@
         if(result.Count == 0)
             result = new List<KeyValuePair<string, HeaderType>> { new KeyValuePair<string, HeaderType>(value, HeaderType.Request) };
 
-        Console.WriteLine(result);
-
         return Task.FromResult<IEnumerable<KeyValuePair<string, HeaderType>>>(result);
     }
 }

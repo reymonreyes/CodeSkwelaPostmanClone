@@ -21,7 +21,6 @@
 
     private async Task DisplayResponse(string? response)
     {
-        Console.WriteLine(response);
         _response = response;
         await OnResponseOutput.InvokeAsync(response);
     }

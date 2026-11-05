@@ -1,6 +1,6 @@
 ﻿@using CoreShared = CodeSkwelaPostmanClone.Blazor.Shared
 
-<MudText>@Action?.Name</MudText>
+<MudText>@_actionName</MudText>
 
 @code {
     private string? _response;
@@ -19,7 +19,6 @@
 
     private async Task DisplayResponse(string? response)
     {
-        Console.WriteLine(response);
         _response = response;
         await OnResponseOutput.InvokeAsync(response);
     }

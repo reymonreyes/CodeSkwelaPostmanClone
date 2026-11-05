@@ -4,6 +4,7 @@ namespace CodeSkwelaPostmanClone.Blazor.Shared.WorkflowActions
 {
     public class RepeatAction : WorkflowAction, IWorkflowAction
     {
+        private DateTime _startTime;
         private int _repeatCount;
 
         public int RepeatCount
@@ -15,32 +16,25 @@ namespace CodeSkwelaPostmanClone.Blazor.Shared.WorkflowActions
         {
             _repeatCount = repeatCount;
         }
+
         public override async Task<string?> Run(string? parameters)
         {
-            Console.WriteLine(this.Name);
-            OnResponseOutput?.Invoke($"Repeating for {_repeatCount} times...");
+            _startTime = DateTime.Now;
+            OnResponseOutput?.Invoke($"Repeating for {_repeatCount} times... [Start: {_startTime.ToFileTime()} ]");           
+            
             for (int i = 0; i < _repeatCount; i++)
             {
-                OnResponseOutput?.Invoke($"Iteration {i + 1} of {_repeatCount}...");
+                OnResponseOutput?.Invoke($"{i + 1} of {_repeatCount}...[Time: {DateTime.Now.ToFileTime()}]");
 
-                var stack = new Stack<WorkflowAction>();
-                stack.Push(this);
-
-                while (stack.Count > 0)
+                foreach (var action in ChildActions)
                 {
-                    var current = stack.Pop();
-
-                    if (current != this)
-                        await current.Run(null);
-
-                    foreach (var child in current.ChildActions.Reverse<WorkflowAction>())
-                    {
-                        stack.Push(child);
-                    }
-                }                
+                    await action.Run(null);
+                }
             }
-            OnResponseOutput?.Invoke($"Completed repeating for {_repeatCount} times...");
+
+            OnResponseOutput?.Invoke($"Completed repeating for {_repeatCount} times... [End: {_startTime.ToFileTime()} ]");
+            
             return null;
-        }
+        }        
     }    
 }

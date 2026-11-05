@@ -32,7 +32,7 @@ namespace CodeSkwelaPostmanClone.UnitTests
         {
             var workflow = new Workflow();
             var requestSettings = new RequestSettings { Url = "https://www.example.com", Verb = "get" };            
-            var mockRequestAction = Substitute.For<RequestAction>(requestSettings, GetHttpClient());
+            var mockRequestAction = Substitute.For<RequestAction>("Request 1", requestSettings, GetHttpClient(), null);
             workflow.AddAction(mockRequestAction);
 
             await workflow.Run();
@@ -45,10 +45,10 @@ namespace CodeSkwelaPostmanClone.UnitTests
         {
             var workflow = new Workflow();
             var requestSettings = new RequestSettings { Url = "https://www.example.com", Verb = "get" };
-            var mockRequestAction = Substitute.For<RequestAction>(requestSettings, GetHttpClient());
+            var mockRequestAction = Substitute.For<RequestAction>("Request 1", requestSettings, GetHttpClient(), null);
             workflow.AddAction(mockRequestAction);
             var requestSettings2 = new RequestSettings { Url = "https://www.example.com", Verb = "get" };
-            var mockRequestAction2 = Substitute.For<RequestAction>(requestSettings, GetHttpClient());
+            var mockRequestAction2 = Substitute.For<RequestAction>("Request 2", requestSettings2, GetHttpClient(), null);
             workflow.AddAction(mockRequestAction2);
 
             await workflow.Run();

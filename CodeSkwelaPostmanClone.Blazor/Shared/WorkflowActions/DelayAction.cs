@@ -16,7 +16,6 @@
 
         public override async Task<string?> Run(string? parameters)
         {
-            Console.WriteLine(this.Name);
             OnResponseOutput?.Invoke($"Delaying for {_delayMs} ms...");
             await Task.Delay(_delayMs);
             OnResponseOutput?.Invoke($"Completed delay of {_delayMs} ms...");

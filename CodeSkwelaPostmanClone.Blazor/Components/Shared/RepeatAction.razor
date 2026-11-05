@@ -9,7 +9,7 @@
     <MudMenu Icon="@Icons.Material.Filled.Add" AriaLabel="Open user menu">
         <MudMenuItem Label="Request" OnClick="AddRequest" />
         <MudDivider />
-        @* <MudMenuItem Label="Repeat" OnClick="AddRepeat" /> *@
+        <MudMenuItem Label="Repeat" OnClick="AddRepeat" />
         <MudMenuItem Label="Delay" OnClick="AddDelay" />
     </MudMenu>
 </MudStack>
@@ -20,6 +20,10 @@
         @if (action is CoreShared.WorkflowActions.DelayAction delayAction)
         {
             <DelayAction Action="delayAction" OnResponseOutput="DisplayResponse" />
+        }
+        else if (action is CoreShared.WorkflowActions.RepeatAction repeatAction)
+        {
+            <RepeatAction Action="repeatAction" OnResponseOutput="DisplayResponse" />    
         }
         else
         {
@@ -61,7 +65,6 @@
 
     private async Task DisplayResponse(string? response)
     {
-        Console.WriteLine(response);
         await OnResponseOutput.InvokeAsync(response);
     }
 
@@ -90,5 +93,11 @@
         {
             _requests = await context.RequestSettings.ToListAsync();
         }
+    }
+
+    private void AddRepeat()
+    {
+        var repeatAction = new CoreShared.WorkflowActions.RepeatAction("Repeat", 1);
+        Action?.ChildActions.Add(repeatAction);
     }
 }

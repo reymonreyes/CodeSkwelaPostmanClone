@@ -47,8 +47,6 @@ namespace CodeSkwelaPostmanClone.Blazor.Shared.WorkflowActions
                 throw new ArgumentNullException(nameof(RequestSettings.Url));
             }
 
-            Console.WriteLine(this.Name);
-
             try
             {
                 OnResponseOutput?.Invoke($"Running {this.Name}...");
@@ -56,8 +54,6 @@ namespace CodeSkwelaPostmanClone.Blazor.Shared.WorkflowActions
                 var request = CreateRequest(_requestSettings);
                 var response = await _httpClient.SendAsync(request);
                 var responseContent = await response.Content.ReadAsStringAsync();
-
-                Console.WriteLine(responseContent);
 
                 OnResponseOutput?.Invoke(responseContent);
                 return responseContent;

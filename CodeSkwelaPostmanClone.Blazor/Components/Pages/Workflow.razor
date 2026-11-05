@@ -8,6 +8,7 @@
 @inject IHttpClientFactory HttpClientFactory
 @inject IDbContextFactory<ApplicationDbContext> DbContextFactory
 @inject ISnackbar Snackbar
+@inject IScrollManager ScrollManager
 
 <MudPaper Class="ma-2">
     <MudToolBar>
@@ -46,14 +47,19 @@
                 }                
             </MudStack>
         </MudItem>
-        <MudItem xs="6" sm="6" md="6" lg="6" Class="d-flex flex-column flex-grow-1" style="height: 100%;">
+        <MudItem xs="6" sm="6" md="6" lg="6" Class="d-flex flex-column flex-grow-1" style="height: 100%;" id="console-output-1">
             <MudStack Spacing="0" StretchItems="StretchItems.All" Class="flex-grow-1 overflow-hidden" Style="height: 100%;">
-                <MudPaper Square="true" Outlined="true"  Class="flex-grow-1 pa-4 overflow-y-auto" Style="height: 100%;">
-                    <MudText>Console output</MudText>
+                <MudPaper Square="true" Outlined="true"  Class="flex-grow-1 pa-4 overflow-y-auto" Style="height: 100%;" id="console-output-2">
+                    <MudStack Row StretchItems="StretchItems.Start">
+                        <MudText>Console output</MudText>
+                        <MudButton OnClick="ClearConsole">Clear</MudButton>
+                    </MudStack>
+                    <MudStack Class="pa-4 font-monospace" Style="background-color: #0c0c0c; color: #cccccc; overflow-y: auto; border: 1px solid #333333;">
                     @foreach (var response in _responses)
                     {
-                        <MudText>@response</MudText>
+                        <MudText Typo="Typo.body2" Class="font-monospace text-justify" Style="color: #cccccc;">@response</MudText>
                     }
+                    </MudStack>
                 </MudPaper>
             </MudStack>
         </MudItem>
@@ -80,7 +86,7 @@
     List<Core.Entities.RequestSettings> _requests = new List<Core.Entities.RequestSettings>();
     Shared.Workflow _workflow = new Shared.Workflow();
     List<string> _responses = new List<string>();
-    
+
     private async Task LoadRequests()
     {
         using (var context = DbContextFactory.CreateDbContext())
@@ -107,10 +113,10 @@
         await _workflow.Run();
     }
 
-    private void DisplayResponse(string? response)
+    private async Task DisplayResponse(string? response)
     {
-        Console.WriteLine(response);
         _responses.Add(response);
+        //await ScrollManager.ScrollToBottomAsync("#console-output-2");
     }
 
     private async Task AddDelay()
@@ -123,5 +129,10 @@
     {
         var repeatAction = new Shared.WorkflowActions.RepeatAction("Repeat", 1);
         _workflow.AddAction(repeatAction);
+    }
+
+    private void ClearConsole()
+    {
+        _responses.Clear();
     }
 }
