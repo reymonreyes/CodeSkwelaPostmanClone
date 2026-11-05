@@ -29,18 +29,18 @@
                 {
                     foreach (var action in _workflow)
                     {
-                        <MudPaper Square="true" Outlined="true" Class="pa-1">
+                        <MudPaper Square="true" Outlined="true" Class="pa-1" @key="action">
                         @if (action is Shared.WorkflowActions.DelayAction delayAction)
                         {
-                            <DelayAction Action="delayAction" OnResponseOutput="DisplayResponse" />
+                            <DelayAction Action="delayAction" OnResponseOutput="DisplayResponse" OnDelete="DeleteAction" />
                         }
                         else if (action is Shared.WorkflowActions.RepeatAction repeatAction)
                         {
-                            <RepeatAction Action="repeatAction" OnResponseOutput="DisplayResponse" />    
+                            <RepeatAction Action="repeatAction" OnResponseOutput="DisplayResponse" OnDelete="DeleteAction" />
                         }
                         else
                         {
-                            <WorkflowAction Action="action" OnResponseOutput="DisplayResponse" />
+                            <WorkflowAction Action="action" OnResponseOutput="DisplayResponse" OnDelete="DeleteAction" />
                         }
                         </MudPaper>
                     }
@@ -134,5 +134,10 @@
     private void ClearConsole()
     {
         _responses.Clear();
+    }
+
+    private void DeleteAction(Shared.WorkflowAction action)
+    {
+        _workflow.Actions.Remove(action);        
     }
 }

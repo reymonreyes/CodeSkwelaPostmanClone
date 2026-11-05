@@ -1,6 +1,9 @@
 ﻿@using CoreShared = CodeSkwelaPostmanClone.Blazor.Shared
 
-<MudText>@_actionName</MudText>
+<MudStack Row StretchItems="StretchItems.Start" Class="d-flex align-center pa-1">
+    <MudText>@_actionName</MudText>
+    <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="delete" OnClick="Delete" />
+</MudStack>
 
 @code {
     private string? _response;
@@ -10,6 +13,8 @@
     public CoreShared.WorkflowAction? Action { get; set; }
     [Parameter]
     public EventCallback<string?> OnResponseOutput { get; set; }
+    [Parameter]
+    public EventCallback<CoreShared.WorkflowAction> OnDelete { get; set; }
 
     protected override void OnInitialized()
     {
@@ -21,5 +26,10 @@
     {
         _response = response;
         await OnResponseOutput.InvokeAsync(response);
+    }
+
+    private async Task Delete()
+    {
+        await OnDelete.InvokeAsync(Action);
     }
 }
