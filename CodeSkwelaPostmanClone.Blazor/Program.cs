@@ -22,6 +22,7 @@ namespace CodeSkwelaPostmanClone.Blazor
             builder.Services.AddDbContextFactory<ApplicationDbContext>();
             builder.Services.AddScoped<RequestsNavigationMenuState>();
             builder.Services.AddScoped<RequestDetailsState>();
+            builder.Services.AddScoped<WorkflowActionState>();
 
             var app = builder.Build();
 

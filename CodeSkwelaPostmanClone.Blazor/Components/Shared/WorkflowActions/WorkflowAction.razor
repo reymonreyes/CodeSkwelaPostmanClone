@@ -1,0 +1,108 @@
+﻿@using CoreShared = CodeSkwelaPostmanClone.Blazor.Shared
+@inject WorkflowActionState WorkflowActionState
+
+<MudPaper Class="@_moveActionHighlight" Elevation="0">
+    @if (_isOtherActionMoving)
+    {
+        <MudStack>
+            <MudButton Variant="Variant.Filled" Color="Color.Success" FullWidth="true" Class="rounded-0" OnClick="ReceiveMoveAction">&nbsp;</MudButton>
+        </MudStack>
+    }
+    <MudStack Row StretchItems="StretchItems.Start" Class="d-flex align-center pa-1">
+        <MudText>[@Index] @_actionName</MudText>
+        @if (_isMoving)
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.Cancel" aria-label="move" OnClick="CancelMoveAction" />
+        }
+        else
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="delete" OnClick="Delete" />
+            <MudIconButton Icon="@Icons.Material.Filled.MoveUp" aria-label="move" OnClick="MoveAction" />
+        }
+    </MudStack>
+</MudPaper>
+
+@code {
+    private string? _response;
+    private string? _actionName;
+    private string? _moveActionHighlight;
+    private bool _isMoving, _isOtherActionMoving;
+    private CoreShared.WorkflowAction _actionToMove;
+
+    [Parameter]
+    public CoreShared.WorkflowAction? Action { get; set; }
+    [Parameter]
+    public EventCallback<string?> OnResponseOutput { get; set; }
+    [Parameter]
+    public EventCallback<CoreShared.WorkflowAction> OnDelete { get; set; }
+    [Parameter]
+    public EventCallback<CoreShared.WorkflowAction> OnMoveReceived { get; set; }
+    [Parameter]
+    public int Index { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Action?.OnResponseOutput += DisplayResponse;
+        WorkflowActionState.OnMoveAction += HandleMoveAction;
+        WorkflowActionState.OnCancelMoveAction += HandleCancelMoveAction;
+        WorkflowActionState.OnCompleteMoveAction += HandleCompleteMoveAction;
+        _actionName = Action.Name;
+    }
+
+    private void HandleCompleteMoveAction()
+    {
+        _moveActionHighlight = string.Empty;
+        _isOtherActionMoving = false;
+        _isMoving = false;
+        StateHasChanged();
+    }
+
+    private void HandleCancelMoveAction()
+    {
+        _moveActionHighlight = string.Empty;
+        _isOtherActionMoving = false;
+        StateHasChanged();
+    }
+
+    private void HandleMoveAction(CoreShared.WorkflowAction action)
+    {
+        if (action != Action)
+        {
+            _actionToMove = action;
+            _moveActionHighlight = "border-solid border-2 mud-border-success";
+            _isOtherActionMoving = true;
+            StateHasChanged();
+        };
+    }
+
+    private async Task DisplayResponse(string? response)
+    {
+        _response = response;
+        await OnResponseOutput.InvokeAsync(response);
+    }
+
+    private async Task Delete()
+    {
+        await OnDelete.InvokeAsync(Action);
+    }
+
+    private void MoveAction()
+    {
+        //highlight action
+        _moveActionHighlight = "border-solid border-2 mud-border-error";
+        _isMoving = true;
+        WorkflowActionState.MoveAction(Action);
+    }
+
+    private void CancelMoveAction()
+    {
+        _moveActionHighlight = string.Empty;
+        _isMoving = false;
+        WorkflowActionState.CancelMoveAction();
+    }
+
+    private async Task ReceiveMoveAction()
+    {
+        await OnMoveReceived.InvokeAsync(_actionToMove);
+    }
+}

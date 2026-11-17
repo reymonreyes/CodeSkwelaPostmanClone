@@ -1,7 +1,7 @@
 ﻿@page "/workflows/basic"
 @using CodeSkwelaPostmanClone.Blazor.Components.Shared
+@using CodeSkwelaPostmanClone.Blazor.Components.Shared.WorkflowActions
 @using CodeSkwelaPostmanClone.Blazor.Infrastructure.Data
-@using CodeSkwelaPostmanClone.Blazor.Shared
 @using CodeSkwelaPostmanClone.Blazor.Shared.WorkflowActions
 @using Microsoft.EntityFrameworkCore
 @using Shared = CodeSkwelaPostmanClone.Blazor.Shared
@@ -9,6 +9,7 @@
 @inject IDbContextFactory<ApplicationDbContext> DbContextFactory
 @inject ISnackbar Snackbar
 @inject IScrollManager ScrollManager
+@inject WorkflowActionState WorkflowActionState
 
 <MudPaper Class="ma-2">
     <MudToolBar>
@@ -27,8 +28,10 @@
             <MudStack Spacing="0" StretchItems="StretchItems.All">
                 @if(_workflow is not null)
                 {
+                    var tempIndex = 0;
                     foreach (var action in _workflow)
                     {
+                        var actionIndex = tempIndex;
                         <MudPaper Square="true" Outlined="true" Class="pa-1" @key="action">
                         @if (action is Shared.WorkflowActions.DelayAction delayAction)
                         {
@@ -40,9 +43,10 @@
                         }
                         else
                         {
-                            <WorkflowAction Action="action" OnResponseOutput="DisplayResponse" OnDelete="DeleteAction" />
+                            <WorkflowAction Action="action" OnResponseOutput="DisplayResponse" OnDelete="DeleteAction" OnMoveReceived="@((actionReceived) => MoveActionReceived(actionReceived, actionIndex))" Index="actionIndex" />
                         }
                         </MudPaper>
+                        tempIndex++;
                     }
                 }                
             </MudStack>
@@ -139,5 +143,17 @@
     private void DeleteAction(Shared.WorkflowAction action)
     {
         _workflow.Actions.Remove(action);        
+    }
+
+    private void MoveActionReceived(Shared.WorkflowAction action, int index)
+    {
+        if (_workflow.Actions.Contains(action))
+        {
+            _workflow.Actions.RemoveAt(_workflow.Actions.IndexOf(action));            
+        }
+
+        _workflow.Actions.Insert(index, action);
+
+        WorkflowActionState.CompleteMoveAction();
     }
 }

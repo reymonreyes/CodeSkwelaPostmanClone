@@ -7,10 +7,9 @@ namespace CodeSkwelaPostmanClone.Blazor.Shared
     public class Workflow : IEnumerable<WorkflowAction>
     {
         private List<WorkflowAction> _actions = new List<WorkflowAction>();
-        private WorkflowAction _rootAction, _lastAction;
 
         public void AddAction(WorkflowAction action)
-        {
+        {            
             _actions.Add(action);
         }
 
