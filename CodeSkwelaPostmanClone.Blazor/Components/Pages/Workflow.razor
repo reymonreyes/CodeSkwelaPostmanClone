@@ -45,7 +45,7 @@
                         {
                             <WorkflowAction Action="action" OnResponseOutput="DisplayResponse" OnDelete="DeleteAction" 
                                 OnMoveReceived="@((actionReceived) => MoveActionReceived(actionReceived, actionIndex))" Index="actionIndex"
-                                IsFirst="actionIndex == 0" IsLast="actionIndex == _workflow.Count - 1" />
+                                IsLast="actionIndex == _workflow.Count - 1" />
                         }
                         </MudPaper>
                         tempIndex++;
