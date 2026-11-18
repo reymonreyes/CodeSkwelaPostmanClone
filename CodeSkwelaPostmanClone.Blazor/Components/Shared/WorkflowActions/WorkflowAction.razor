@@ -2,7 +2,7 @@
 @inject WorkflowActionState WorkflowActionState
 
 <MudPaper Class="@_moveActionHighlight" Elevation="0">
-    @if (_isOtherActionMoving)
+    @if (ShowTopMoveButton())
     {
         <MudStack>
             <MudButton Variant="Variant.Filled" Color="Color.Success" FullWidth="true" Class="rounded-0" OnClick="ReceiveMoveAction">&nbsp;</MudButton>
@@ -20,14 +20,21 @@
             <MudIconButton Icon="@Icons.Material.Filled.MoveUp" aria-label="move" OnClick="MoveAction" />
         }
     </MudStack>
+    @if (_isOtherActionMoving && IsLast)
+    {
+        <MudStack>
+            <MudButton Variant="Variant.Filled" Color="Color.Success" FullWidth="true" Class="rounded-0" OnClick="ReceiveMoveAction">&nbsp;</MudButton>
+        </MudStack>
+    }
 </MudPaper>
 
-@code {
+    @code {
     private string? _response;
     private string? _actionName;
     private string? _moveActionHighlight;
     private bool _isMoving, _isOtherActionMoving;
     private CoreShared.WorkflowAction _actionToMove;
+    private int _actionToMoveIndex;
 
     [Parameter]
     public CoreShared.WorkflowAction? Action { get; set; }
@@ -39,6 +46,10 @@
     public EventCallback<CoreShared.WorkflowAction> OnMoveReceived { get; set; }
     [Parameter]
     public int Index { get; set; }
+    [Parameter]
+    public bool IsFirst { get; set; }
+    [Parameter]
+    public bool IsLast { get; set; }
 
     protected override void OnInitialized()
     {
@@ -64,13 +75,14 @@
         StateHasChanged();
     }
 
-    private void HandleMoveAction(CoreShared.WorkflowAction action)
+    private void HandleMoveAction(CoreShared.WorkflowAction action, int index)
     {
         if (action != Action)
         {
             _actionToMove = action;
             _moveActionHighlight = "border-solid border-2 mud-border-success";
             _isOtherActionMoving = true;
+            _actionToMoveIndex = index;
             StateHasChanged();
         };
     }
@@ -91,7 +103,7 @@
         //highlight action
         _moveActionHighlight = "border-solid border-2 mud-border-error";
         _isMoving = true;
-        WorkflowActionState.MoveAction(Action);
+        WorkflowActionState.MoveAction(Action, Index);
     }
 
     private void CancelMoveAction()
@@ -104,5 +116,24 @@
     private async Task ReceiveMoveAction()
     {
         await OnMoveReceived.InvokeAsync(_actionToMove);
+    }
+
+    private bool ShowTopMoveButton()
+    {        
+        if (_isOtherActionMoving)
+        {
+            if (Index < _actionToMoveIndex)
+            {
+                return true;                
+            }
+            else if (Index > _actionToMoveIndex)
+            {
+                var isNotAdjacent = Index - _actionToMoveIndex > 1;
+                if (isNotAdjacent)
+                    return true;
+            }
+        }
+
+        return false;
     }
 }

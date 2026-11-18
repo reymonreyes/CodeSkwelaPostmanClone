@@ -4,13 +4,13 @@ namespace CodeSkwelaPostmanClone.Blazor.Components.Shared
 {
     public class WorkflowActionState
     {
-        public Action<WorkflowAction>? OnMoveAction { get; set; }
+        public Action<WorkflowAction, int>? OnMoveAction { get; set; }
         public Action? OnCancelMoveAction { get; set; }
         public Action? OnCompleteMoveAction { get; set; }
 
-        public void MoveAction(WorkflowAction action)
+        public void MoveAction(WorkflowAction action, int index)
         {
-            OnMoveAction?.Invoke(action);
+            OnMoveAction?.Invoke(action, index);
         }
 
         public void CancelMoveAction()

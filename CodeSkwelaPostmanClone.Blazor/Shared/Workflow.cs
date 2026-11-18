@@ -32,6 +32,8 @@ namespace CodeSkwelaPostmanClone.Blazor.Shared
         {
             return GetEnumerator();
         }
+
+        public int Count { get { return _actions.Count; } }
     }
 
     public class WorkflowAction : IWorkflowAction
